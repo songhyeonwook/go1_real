@@ -1,0 +1,52 @@
+{
+  "checkpoint": "/home/shw/go1_peg/scripts/rsl_rl/logs/rsl_rl/unitree_go1_rough_healthy/2026-06-16_20-05-30_faithful_p1_seed1/model_5999.pt",
+  "figure": "/home/shw/go1_peg/scripts/rsl_rl/logs/rsl_rl/unitree_go1_rough_healthy/2026-06-16_20-05-30_faithful_p1_seed1/healthy_analysis.png",
+  "target_vx": 1.0,
+  "contact_use_z_only": true,
+  "contact_threshold_n": 1.0,
+  "avg_force": {
+    "FL": 36.691001892089844,
+    "FR": 39.27286911010742,
+    "RL": 27.260051727294922,
+    "RR": 26.192556381225586
+  },
+  "peak_force": {
+    "FL": 93.57369232177734,
+    "FR": 89.57412719726562,
+    "RL": 73.95767211914062,
+    "RR": 74.5896987915039
+  },
+  "duty_factor": {
+    "FL": 0.5325357142857143,
+    "FR": 0.5711544850498339,
+    "RL": 0.5244161129568107,
+    "RR": 0.49470681063122923
+  },
+  "stance_duration_s": {
+    "FL": 0.22616331569664908,
+    "FR": 0.24256437389770721,
+    "RL": 0.2227149911816578,
+    "RR": 0.21009770723104046
+  },
+  "symmetry": {
+    "force_si_front_pct": 6.79761921979251,
+    "force_si_rear_pct": 3.994175109261305,
+    "force_si_left_pct": 29.49427610974098,
+    "force_si_right_pct": 39.960980966086154,
+    "duty_gap_front": 0.03861877076411957,
+    "duty_gap_rear": 0.029709302325581444
+  },
+  "trot_quality": {
+    "diag_fl_rr_sync": 0.9621710777282715,
+    "diag_fr_rl_sync": 0.9532616138458252,
+    "front_antiphase": 0.8963097929954529,
+    "rear_antiphase": 0.9807790517807007,
+    "trot_score": 0.9385444521903992,
+    "pronk_ratio": 0.019171926910299
+  },
+  "body": {
+    "com_lateral_sway_m": 0.028239738286256734,
+    "vx_mean_mps": 1.0022071209975651,
+    "vx_error_mps": 0.0022071209975651485
+  }
+}

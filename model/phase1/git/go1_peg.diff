@@ -1,0 +1,3270 @@
+--- git status ---
+On branch master
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   source/go1_lab/go1_lab/tasks/manager_based/go1_lab/go1_lab_env_cfg.py
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   .dockerignore
+	modified:   .flake8
+	modified:   .gitattributes
+	modified:   .gitignore
+	modified:   .pre-commit-config.yaml
+	modified:   .vscode/.gitignore
+	modified:   .vscode/extensions.json
+	modified:   .vscode/tasks.json
+	modified:   .vscode/tools/launch.template.json
+	modified:   .vscode/tools/settings.template.json
+	modified:   .vscode/tools/setup_vscode.py
+	modified:   README.md
+	modified:   scripts/list_envs.py
+	modified:   scripts/random_agent.py
+	modified:   scripts/rsl_rl/__pycache__/cli_args.cpython-311.pyc
+	modified:   scripts/rsl_rl/cli_args.py
+	modified:   scripts/rsl_rl/play.py
+	modified:   scripts/rsl_rl/train.py
+	modified:   scripts/zero_agent.py
+	modified:   source/go1_lab/config/extension.toml
+	modified:   source/go1_lab/docs/CHANGELOG.rst
+	modified:   source/go1_lab/go1_lab/__init__.py
+	modified:   source/go1_lab/go1_lab/tasks/__init__.py
+	modified:   source/go1_lab/go1_lab/tasks/manager_based/__init__.py
+	modified:   source/go1_lab/go1_lab/tasks/manager_based/go1_lab/__init__.py
+	modified:   source/go1_lab/go1_lab/tasks/manager_based/go1_lab/agents/__init__.py
+	modified:   source/go1_lab/go1_lab/tasks/manager_based/go1_lab/agents/rsl_rl_ppo_cfg.py
+	modified:   source/go1_lab/go1_lab/tasks/manager_based/go1_lab/go1_lab_env_cfg.py
+	modified:   source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/__init__.py
+	modified:   source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/rewards.py
+	modified:   source/go1_lab/go1_lab/ui_extension_example.py
+	modified:   source/go1_lab/pyproject.toml
+	modified:   source/go1_lab/setup.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	analyze_phase2_balanced.sh
+	docs/
+	logs
+	scripts/check_model.py
+	scripts/inspect_jit.py
+	scripts/print_obs_cfg.py
+	scripts/rsl_rl/.pretrained_checkpoints/
+	scripts/rsl_rl/PAPER_FINAL_PROTOCOL.md
+	scripts/rsl_rl/alive_bonus_only/
+	scripts/rsl_rl/analyze_healthy.py
+	scripts/rsl_rl/analyze_phase2_balanced.sh
+	scripts/rsl_rl/analyze_student.py
+	scripts/rsl_rl/compare_fr_baseline_vs_student.py
+	scripts/rsl_rl/confirm_eval_seq.sh
+	scripts/rsl_rl/early_eval_seq.sh
+	scripts/rsl_rl/evaluate_and_select_phase2.sh
+	scripts/rsl_rl/evaluate_phase2_balanced_q_sweep.sh
+	scripts/rsl_rl/export_policy_onnx.py
+	scripts/rsl_rl/flat_eval_seq.sh
+	scripts/rsl_rl/indep_p1_eval_run.sh
+	scripts/rsl_rl/make_paper_all_leg_dashboard.py
+	scripts/rsl_rl/make_paper_five_condition_dashboard.py
+	scripts/rsl_rl/mirror_eval_seq.sh
+	scripts/rsl_rl/ms_eval_seq.sh
+	scripts/rsl_rl/nseed_eval_seq.sh
+	scripts/rsl_rl/nv_shadercache/
+	scripts/rsl_rl/peg_leg_action_wrapper.py
+	scripts/rsl_rl/play_result.py
+	scripts/rsl_rl/pure_eval_seq.sh
+	scripts/rsl_rl/run_analyze_student.sh
+	scripts/rsl_rl/run_final_paper_pipeline.sh
+	scripts/rsl_rl/run_fr_baseline_vs_student_comparison.sh
+	scripts/rsl_rl/run_indep_phase1.sh
+	scripts/rsl_rl/run_phase1_analysis_refine.sh
+	scripts/rsl_rl/run_phase2_from_paper_grade.sh
+	scripts/rsl_rl/run_student.sh
+	scripts/rsl_rl/run_v19_multiseed.sh
+	scripts/rsl_rl/select_phase1_paper_candidate.py
+	scripts/rsl_rl/select_phase2_paper_candidate.py
+	scripts/rsl_rl/select_phase3_student_candidate.py
+	scripts/rsl_rl/sweep_phase2_v13.sh
+	scripts/rsl_rl/test_mdp.py
+	scripts/rsl_rl/train_go1.py
+	scripts/rsl_rl/train_phase1.sh
+	scripts/rsl_rl/train_phase1_default_duty_refine.sh
+	scripts/rsl_rl/train_phase1_front_refine.sh
+	scripts/rsl_rl/train_phase1_official_symmetric.sh
+	scripts/rsl_rl/train_phase1_trot_boost.sh
+	scripts/rsl_rl/train_phase2.sh
+	scripts/rsl_rl/train_phase2_balanced_q2_fast24h.sh
+	scripts/rsl_rl/train_phase2_balanced_q_fast24h.sh
+	scripts/rsl_rl/train_phase2_balanced_q_seeds.sh
+	scripts/rsl_rl/train_phase2_final_search.sh
+	scripts/rsl_rl/train_phase2_limp.sh
+	scripts/rsl_rl/train_phase2_paper_search.sh
+	scripts/rsl_rl/train_phase2_paper_v11.sh
+	scripts/rsl_rl/train_phase2_paper_v12.sh
+	scripts/rsl_rl/train_phase2_paper_v13.sh
+	scripts/rsl_rl/train_phase2_paper_v17.sh
+	scripts/rsl_rl/train_phase2_pilot_search.sh
+	scripts/rsl_rl/train_phase2_selected_full.sh
+	scripts/rsl_rl/train_phase3_student.sh
+	scripts/rsl_rl/train_phase3_student_v11.sh
+	scripts/rsl_rl/v19_eval_run.sh
+	scripts/rsl_rl/verify_hip_torque_limit.py
+	scripts/rsl_rl/verify_peg_leg.py
+	scripts/verify_math.py
+	source/go1_lab/go1_lab/asset.py
+	source/go1_lab/go1_lab/play_robot.py
+	source/go1_lab/go1_lab/tasks/custom_go1_env.py
+	source/go1_lab/go1_lab/tasks/manager_based/alive_bonus_only/
+	source/go1_lab/go1_lab/tasks/manager_based/go1_lab/go1_lab_env.py
+	source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/events.py
+	source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/mirror.py
+	source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/observations.py
+	source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/symmetric_ppo.py
+	train_phase1.sh
+	train_phase2.sh
+	train_phase2_limp.sh
+	train_phase2_paper_search.sh
+	train_phase2_pilot_search.sh
+	train_phase2_selected_full.sh
+ 
+
+
+--- git diff ---
+diff --git a/.dockerignore b/.dockerignore
+old mode 100644
+new mode 100755
+diff --git a/.flake8 b/.flake8
+old mode 100644
+new mode 100755
+diff --git a/.gitattributes b/.gitattributes
+old mode 100644
+new mode 100755
+diff --git a/.gitignore b/.gitignore
+old mode 100644
+new mode 100755
+diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
+old mode 100644
+new mode 100755
+diff --git a/.vscode/.gitignore b/.vscode/.gitignore
+old mode 100644
+new mode 100755
+diff --git a/.vscode/extensions.json b/.vscode/extensions.json
+old mode 100644
+new mode 100755
+diff --git a/.vscode/tasks.json b/.vscode/tasks.json
+old mode 100644
+new mode 100755
+diff --git a/.vscode/tools/launch.template.json b/.vscode/tools/launch.template.json
+old mode 100644
+new mode 100755
+diff --git a/.vscode/tools/settings.template.json b/.vscode/tools/settings.template.json
+old mode 100644
+new mode 100755
+diff --git a/.vscode/tools/setup_vscode.py b/.vscode/tools/setup_vscode.py
+old mode 100644
+new mode 100755
+diff --git a/README.md b/README.md
+old mode 100644
+new mode 100755
+diff --git a/scripts/list_envs.py b/scripts/list_envs.py
+old mode 100644
+new mode 100755
+diff --git a/scripts/random_agent.py b/scripts/random_agent.py
+old mode 100644
+new mode 100755
+diff --git a/scripts/rsl_rl/__pycache__/cli_args.cpython-311.pyc b/scripts/rsl_rl/__pycache__/cli_args.cpython-311.pyc
+old mode 100644
+new mode 100755
+index 9503822..696bc33
+Binary files a/scripts/rsl_rl/__pycache__/cli_args.cpython-311.pyc and b/scripts/rsl_rl/__pycache__/cli_args.cpython-311.pyc differ
+diff --git a/scripts/rsl_rl/cli_args.py b/scripts/rsl_rl/cli_args.py
+old mode 100644
+new mode 100755
+index c176f77..2d8e6eb
+--- a/scripts/rsl_rl/cli_args.py
++++ b/scripts/rsl_rl/cli_args.py
+@@ -6,6 +6,7 @@
+ from __future__ import annotations
+ 
+ import argparse
++import os
+ import random
+ from typing import TYPE_CHECKING
+ 
+@@ -13,6 +14,22 @@ if TYPE_CHECKING:
+     from isaaclab_rl.rsl_rl import RslRlBaseRunnerCfg
+ 
+ 
++def sanitize_rsl_rl_experiment_name(experiment_name: str | None) -> str:
++    """Strip leading path separators.
++
++    On POSIX, ``os.path.join("logs", "rsl_rl", "/foo")`` becomes ``/foo``, dropping
++    the intended ``logs/rsl_rl`` prefix when *experiment_name* was given as ``/foo``.
++    """
++    return (experiment_name or "").strip().strip("/\\")
++
++
++def rsl_rl_experiment_log_dir(experiment_name: str | None, *, root: str | None = None) -> str:
++    """Absolute path to ``<root>/logs/rsl_rl/<experiment_name>`` (default *root* is cwd)."""
++    sub = sanitize_rsl_rl_experiment_name(experiment_name)
++    base = os.getcwd() if root is None else root
++    return os.path.abspath(os.path.join(base, "logs", "rsl_rl", sub))
++
++
+ def add_rsl_rl_args(parser: argparse.ArgumentParser):
+     """Add RSL-RL arguments to the parser.
+ 
+diff --git a/scripts/rsl_rl/play.py b/scripts/rsl_rl/play.py
+old mode 100644
+new mode 100755
+index 44551c7..e2c2d89
+--- a/scripts/rsl_rl/play.py
++++ b/scripts/rsl_rl/play.py
+@@ -14,6 +14,7 @@ from isaaclab.app import AppLauncher
+ 
+ # local imports
+ import cli_args  # isort: skip
++from peg_leg_action_wrapper import PegLegActionMaskWrapper  # isort: skip
+ 
+ # add argparse arguments
+ parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
+@@ -23,7 +24,12 @@ parser.add_argument(
+     "--disable_fabric", action="store_true", default=False, help="Disable fabric and use USD I/O operations."
+ )
+ parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
+-parser.add_argument("--task", type=str, default=None, help="Name of the task.")
++parser.add_argument(
++    "--task",
++    type=str,
++    default="Template-Go1-Lab-v0",
++    help="Name of the task (default: Template-Go1-Lab-v0).",
++)
+ parser.add_argument(
+     "--agent", type=str, default="rsl_rl_cfg_entry_point", help="Name of the RL agent configuration entry point."
+ )
+@@ -57,6 +63,7 @@ import gymnasium as gym
+ import os
+ import time
+ import torch
++from pathlib import Path
+ 
+ from rsl_rl.runners import DistillationRunner, OnPolicyRunner
+ 
+@@ -69,7 +76,7 @@ from isaaclab.envs import (
+ )
+ from isaaclab.utils.assets import retrieve_file_path
+ from isaaclab.utils.dict import print_dict
+-from isaaclab.utils.pretrained_checkpoint import get_published_pretrained_checkpoint
++from isaaclab_rl.utils.pretrained_checkpoint import get_published_pretrained_checkpoint
+ 
+ from isaaclab_rl.rsl_rl import RslRlBaseRunnerCfg, RslRlVecEnvWrapper, export_policy_as_jit, export_policy_as_onnx
+ 
+@@ -97,8 +104,11 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+     env_cfg.sim.device = args_cli.device if args_cli.device is not None else env_cfg.sim.device
+ 
+     # specify directory for logging experiments
+-    log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
+-    log_root_path = os.path.abspath(log_root_path)
++    # 프로젝트 루트를 찾기 (play.py가 scripts/rsl_rl/에 있으므로 상위 2단계)
++    script_dir = Path(__file__).parent.resolve()
++    project_root = script_dir.parent.parent
++    log_root_path = project_root / "logs" / "rsl_rl" / agent_cfg.experiment_name
++    log_root_path = str(log_root_path)
+     print(f"[INFO] Loading experiment from directory: {log_root_path}")
+     if args_cli.use_pretrained_checkpoint:
+         resume_path = get_published_pretrained_checkpoint("rsl_rl", train_task_name)
+@@ -134,6 +144,9 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+         print_dict(video_kwargs, nesting=4)
+         env = gym.wrappers.RecordVideo(env, **video_kwargs)
+ 
++    # 고장 다리 calf action masking 적용
++    env = PegLegActionMaskWrapper(env)
++
+     # wrap around environment for rsl-rl
+     env = RslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
+ 
+diff --git a/scripts/rsl_rl/train.py b/scripts/rsl_rl/train.py
+old mode 100644
+new mode 100755
+index 3d41835..e8e717c
+--- a/scripts/rsl_rl/train.py
++++ b/scripts/rsl_rl/train.py
+@@ -14,17 +14,85 @@ from isaaclab.app import AppLauncher
+ 
+ # local imports
+ import cli_args  # isort: skip
++from peg_leg_action_wrapper import PegLegActionMaskWrapper  # isort: skip
+ 
+ # add argparse arguments
+ parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
+ parser.add_argument("--video", action="store_true", default=False, help="Record videos during training.")
+ parser.add_argument("--video_length", type=int, default=200, help="Length of the recorded video (in steps).")
+ parser.add_argument("--video_interval", type=int, default=2000, help="Interval between video recordings (in steps).")
+-parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
+-parser.add_argument("--task", type=str, default=None, help="Name of the task.")
++parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate (default: uses env config default, typically 4096).")
++parser.add_argument(
++    "--task",
++    type=str,
++    default="Template-Go1-Lab-v0",
++    help="Name of the task (default: Template-Go1-Lab-v0).",
++)
+ parser.add_argument(
+     "--agent", type=str, default="rsl_rl_cfg_entry_point", help="Name of the RL agent configuration entry point."
+ )
++parser.add_argument(
++    "--teacher_ckpt_path",
++    type=str,
++    default=None,
++    help="Path to teacher checkpoint for distillation (optional).",
++)
++parser.add_argument(
++    "--warmstart_ckpt_path",
++    type=str,
++    default=None,
++    help=(
++        "Path to a checkpoint to warmstart the (OnPolicy) runner from, across "
++        "experiments. Typically used for Phase 2 Teacher to load Phase 1 "
++        "Healthy pretrain weights. Loaded only if --resume is not used and "
++        "agent is not distillation."
++    ),
++)
++parser.add_argument(
++    "--use_pretrained_checkpoint",
++    action="store_true",
++    default=False,
++    help="Warm-start OnPolicy training from an Isaac Lab published pretrained checkpoint.",
++)
++parser.add_argument(
++    "--pretrained_task",
++    type=str,
++    default=None,
++    help=(
++        "Task id used to resolve the Isaac Lab published checkpoint when "
++        "--use_pretrained_checkpoint is set. Defaults to --task."
++    ),
++)
++parser.add_argument(
++    "--teacher_experiment_name",
++    type=str,
++    default="unitree_go1_rough_teacher",
++    help="Teacher experiment folder under logs/rsl_rl used when --teacher_ckpt_path is not set.",
++)
++parser.add_argument(
++    "--teacher_load_run",
++    type=str,
++    default=None,
++    help="Teacher run folder regex/name used for checkpoint lookup.",
++)
++parser.add_argument(
++    "--teacher_checkpoint",
++    type=str,
++    default="model_.*.pt",
++    help="Teacher checkpoint regex/name used for checkpoint lookup.",
++)
++parser.add_argument(
++    "--min_action_std",
++    type=float,
++    default=1.0e-3,
++    help="Lower bound for action std to avoid invalid Normal distribution.",
++)
++parser.add_argument(
++    "--use_peg_leg_action_mask",
++    action="store_true",
++    default=False,
++    help="Enable peg-leg calf action masking wrapper.",
++)
+ parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
+ parser.add_argument("--max_iterations", type=int, default=None, help="RL Policy training iterations.")
+ parser.add_argument(
+@@ -37,6 +105,13 @@ cli_args.add_rsl_rl_args(parser)
+ AppLauncher.add_app_launcher_args(parser)
+ args_cli, hydra_args = parser.parse_known_args()
+ 
++if args_cli.num_envs is not None and args_cli.num_envs > 32768:
++    raise ValueError(
++        f"--num_envs={args_cli.num_envs} is too large for a single-PC Isaac Lab run. "
++        "Use a value such as 4096, 6144, or 8192. "
++        "If this was meant to be 8192 or 4096, pass that value explicitly."
++    )
++
+ # always enable cameras to record video
+ if args_cli.video:
+     args_cli.enable_cameras = True
+@@ -76,6 +151,7 @@ import gymnasium as gym
+ import os
+ import torch
+ from datetime import datetime
++from torch.distributions import Normal
+ 
+ import omni
+ from rsl_rl.runners import DistillationRunner, OnPolicyRunner
+@@ -91,6 +167,7 @@ from isaaclab.utils.dict import print_dict
+ from isaaclab.utils.io import dump_yaml
+ 
+ from isaaclab_rl.rsl_rl import RslRlBaseRunnerCfg, RslRlVecEnvWrapper
++from isaaclab_rl.utils.pretrained_checkpoint import get_published_pretrained_checkpoint
+ 
+ import isaaclab_tasks  # noqa: F401
+ from isaaclab_tasks.utils import get_checkpoint_path
+@@ -104,6 +181,46 @@ torch.backends.cudnn.deterministic = False
+ torch.backends.cudnn.benchmark = False
+ 
+ 
++def _inject_action_std_safety(policy, min_action_std: float) -> None:
++    """Clamp action std to keep Normal distribution valid."""
++    if not hasattr(policy, "update_distribution"):
++        return
++
++    original_update_distribution = policy.update_distribution
++
++    def safe_update_distribution(obs):
++        original_update_distribution(obs)
++        if not hasattr(policy, "distribution") or policy.distribution is None:
++            return
++
++        mean = policy.distribution.mean
++        std = policy.distribution.stddev
++        std = torch.nan_to_num(std, nan=float(min_action_std), posinf=1.0, neginf=float(min_action_std))
++        std = torch.clamp(std, min=float(min_action_std))
++        policy.distribution = Normal(mean, std)
++
++        with torch.no_grad():
++            if hasattr(policy, "std"):
++                policy.std.data = torch.nan_to_num(
++                    policy.std.data,
++                    nan=float(min_action_std),
++                    posinf=1.0,
++                    neginf=float(min_action_std),
++                )
++                policy.std.data.clamp_(min=float(min_action_std))
++            if hasattr(policy, "log_std"):
++                min_log_std = float(torch.log(torch.tensor(float(min_action_std))).item())
++                policy.log_std.data = torch.nan_to_num(
++                    policy.log_std.data,
++                    nan=min_log_std,
++                    posinf=0.0,
++                    neginf=min_log_std,
++                )
++                policy.log_std.data.clamp_(min=min_log_std)
++
++    policy.update_distribution = safe_update_distribution
++
++
+ @hydra_task_config(args_cli.task, args_cli.agent)
+ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlBaseRunnerCfg):
+     """Train with RSL-RL agent."""
+@@ -159,9 +276,38 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+     if isinstance(env.unwrapped, DirectMARLEnv):
+         env = multi_agent_to_single_agent(env)
+ 
+-    # save resume path before creating a new log_dir
+-    if agent_cfg.resume or agent_cfg.algorithm.class_name == "Distillation":
++    resume_path = None
++    warmstart_path = None
++    teacher_resume_path = None
++    is_distillation = agent_cfg.class_name == "DistillationRunner"
++
++    # Distillation에서는 teacher checkpoint를 기준으로 시작합니다.
++    # (RslRlBaseRunnerCfg 문서상 resume 플래그는 distillation에서 무시됨)
++    if is_distillation:
++        if args_cli.teacher_ckpt_path is not None:
++            teacher_resume_path = os.path.abspath(args_cli.teacher_ckpt_path)
++        else:
++            teacher_log_root = os.path.abspath(os.path.join("logs", "rsl_rl", args_cli.teacher_experiment_name))
++            teacher_resume_path = get_checkpoint_path(
++                teacher_log_root,
++                args_cli.teacher_load_run or ".*",
++                args_cli.teacher_checkpoint,
++            )
++    elif agent_cfg.resume:
++        # OnPolicyRunner인 경우에만 명시적 resume를 적용합니다.
+         resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
++    elif args_cli.use_pretrained_checkpoint:
++        pretrained_task = args_cli.pretrained_task or args_cli.task
++        pretrained_task = pretrained_task.split(":")[-1].replace("-Play", "")
++        warmstart_path = get_published_pretrained_checkpoint("rsl_rl", pretrained_task)
++        if not warmstart_path:
++            raise FileNotFoundError(
++                "Isaac Lab published pretrained checkpoint is unavailable for "
++                f"task={pretrained_task!r}."
++            )
++    elif args_cli.warmstart_ckpt_path is not None:
++        # Cross-experiment warmstart (e.g. Phase1 Healthy → Phase2 Teacher).
++        warmstart_path = os.path.abspath(args_cli.warmstart_ckpt_path)
+ 
+     # wrap for video recording
+     if args_cli.video:
+@@ -175,23 +321,60 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
+         print_dict(video_kwargs, nesting=4)
+         env = gym.wrappers.RecordVideo(env, **video_kwargs)
+ 
++    # 필요할 때만 고장 다리 calf action masking 적용
++    enable_mask = args_cli.use_peg_leg_action_mask or bool(getattr(env_cfg, "use_peg_leg_action_mask", False))
++    if enable_mask:
++        env = PegLegActionMaskWrapper(env)
++
+     # wrap around environment for rsl-rl
+     env = RslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
+ 
+     # create runner from rsl-rl
++    agent_cfg_dict = agent_cfg.to_dict()
++
++    # RSL-RL 3.0.1+ 버전 호환성을 위한 Patch
++    # 1. policy 구성 요소에 class_name 주입
++    if "policy" in agent_cfg_dict:
++        policy_cfg = agent_cfg_dict["policy"]
++        for component in ["actor", "critic", "student", "teacher"]:
++            if component in policy_cfg and isinstance(policy_cfg[component], dict):
++                if "class_name" not in policy_cfg[component]:
++                    # 기본값으로 MLP 설정 (Isaac Lab 표준)
++                    policy_cfg[component]["class_name"] = "MLP"
++
++    # 2. algorithm 설정에서 PPO 클래스가 지원하지 않는 키워드 제거
++    if "algorithm" in agent_cfg_dict:
++        alg_cfg = agent_cfg_dict["algorithm"]
++        # rsl-rl 3.0.1 PPO.__init__에서 제거된 키워드들 (버전 불일치 해결)
++        taboo_keys = ["optimizer", "config_class", "share_cnn_encoders"]
++        for taboo_key in taboo_keys:
++            if taboo_key in alg_cfg:
++                alg_cfg.pop(taboo_key)
++
+     if agent_cfg.class_name == "OnPolicyRunner":
+-        runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
++        runner = OnPolicyRunner(env, agent_cfg_dict, log_dir=log_dir, device=agent_cfg.device)
+     elif agent_cfg.class_name == "DistillationRunner":
+-        runner = DistillationRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
++        runner = DistillationRunner(env, agent_cfg_dict, log_dir=log_dir, device=agent_cfg.device)
+     else:
+         raise ValueError(f"Unsupported runner class: {agent_cfg.class_name}")
+     # write git state to logs
+     runner.add_git_repo_to_log(__file__)
+     # load the checkpoint
+-    if agent_cfg.resume or agent_cfg.algorithm.class_name == "Distillation":
++    if (not is_distillation) and agent_cfg.resume:
+         print(f"[INFO]: Loading model checkpoint from: {resume_path}")
+         # load previously trained model
+         runner.load(resume_path)
++    elif (not is_distillation) and warmstart_path is not None:
++        # Cross-experiment warmstart (optimizer/state 는 리셋, 가중치만 이식).
++        print(f"[INFO]: Warmstarting from checkpoint: {warmstart_path}")
++        runner.load(warmstart_path, load_optimizer=False)
++    elif is_distillation:
++        print(f"[INFO]: Loading teacher checkpoint for distillation from: {teacher_resume_path}")
++        # DistillationRunner는 teacher 파라미터가 먼저 로드되어야 학습을 시작할 수 있습니다.
++        runner.load(teacher_resume_path, load_optimizer=False)
++
++    # 학습 안정화: 분포 표준편차 하한 강제
++    _inject_action_std_safety(runner.alg.policy, min_action_std=args_cli.min_action_std)
+ 
+     # dump the configuration into log-directory
+     dump_yaml(os.path.join(log_dir, "params", "env.yaml"), env_cfg)
+diff --git a/scripts/zero_agent.py b/scripts/zero_agent.py
+old mode 100644
+new mode 100755
+diff --git a/source/go1_lab/config/extension.toml b/source/go1_lab/config/extension.toml
+old mode 100644
+new mode 100755
+diff --git a/source/go1_lab/docs/CHANGELOG.rst b/source/go1_lab/docs/CHANGELOG.rst
+old mode 100644
+new mode 100755
+diff --git a/source/go1_lab/go1_lab/__init__.py b/source/go1_lab/go1_lab/__init__.py
+old mode 100644
+new mode 100755
+diff --git a/source/go1_lab/go1_lab/tasks/__init__.py b/source/go1_lab/go1_lab/tasks/__init__.py
+old mode 100644
+new mode 100755
+diff --git a/source/go1_lab/go1_lab/tasks/manager_based/__init__.py b/source/go1_lab/go1_lab/tasks/manager_based/__init__.py
+old mode 100644
+new mode 100755
+diff --git a/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/__init__.py b/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/__init__.py
+index bfd5bed..40827e2 100644
+--- a/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/__init__.py
++++ b/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/__init__.py
+@@ -14,10 +14,42 @@ from . import agents
+ 
+ gym.register(
+     id="Template-Go1-Lab-v0",
+-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
++    entry_point=f"{__name__}.go1_lab_env:Go1LabEnv",
+     disable_env_checker=True,
+     kwargs={
+         "env_cfg_entry_point": f"{__name__}.go1_lab_env_cfg:Go1LabEnvCfg",
+         "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:PPORunnerCfg",
++        "rsl_rl_symmetric_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:HealthyPPOLstmSymmetryRunnerCfg",
++        "rsl_rl_duty_refine_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:HealthyPPOLstmDutyRefineRunnerCfg",
++        "rsl_rl_trot_boost_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:HealthyPPOLstmTrotBoostRunnerCfg",
++        "rsl_rl_official_symmetric_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:OfficialGo1SymmetryRunnerCfg",
++        "rsl_rl_official_symmetric_refine_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:OfficialGo1SymmetryRefineRunnerCfg",
++        "rsl_rl_teacher_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:TeacherRunnerCfg",
++        "rsl_rl_phase1_mirror_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:HealthyPPOLstmMirrorRunnerCfg",
++        "rsl_rl_teacher_mirror_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:TeacherMirrorRunnerCfg",
++        "rsl_rl_phase1_mlp_symmetric_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:HealthyMlpSymmetryRunnerCfg",
++        "rsl_rl_phase1_mlp_symmetric_refine_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:HealthyMlpSymmetryRefineRunnerCfg",
++        "rsl_rl_teacher_mlp_symmetric_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:TeacherMlpSymmetryRunnerCfg",
++        "rsl_rl_distill_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:DistillRunnerCfg",
+     },
+-)
+\ No newline at end of file
++)
++
++
++def _official_go1_rsl_rl_cfg():
++    """Use Isaac Lab's published Go1 RSL-RL architecture for baseline evaluation."""
++    from isaaclab_tasks.utils.parse_cfg import load_cfg_from_registry
++
++    return load_cfg_from_registry(
++        "Isaac-Velocity-Rough-Unitree-Go1-v0", "rsl_rl_cfg_entry_point"
++    )
++
++
++gym.register(
++    id="Template-Go1-Lab-OfficialBaseline-v0",
++    entry_point=f"{__name__}.go1_lab_env:Go1LabEnv",
++    disable_env_checker=True,
++    kwargs={
++        "env_cfg_entry_point": f"{__name__}.go1_lab_env_cfg:Go1LabEnvCfg",
++        "rsl_rl_cfg_entry_point": f"{__name__}:_official_go1_rsl_rl_cfg",
++    },
++)
+diff --git a/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/agents/__init__.py b/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/agents/__init__.py
+old mode 100644
+new mode 100755
+diff --git a/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/agents/rsl_rl_ppo_cfg.py b/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/agents/rsl_rl_ppo_cfg.py
+old mode 100644
+new mode 100755
+index 4556af6..8be73ea
+--- a/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/agents/rsl_rl_ppo_cfg.py
++++ b/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/agents/rsl_rl_ppo_cfg.py
+@@ -5,23 +5,334 @@
+ 
+ from isaaclab.utils import configclass
+ 
+-from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
++from isaaclab_rl.rsl_rl import (
++    RslRlDistillationAlgorithmCfg,
++    RslRlDistillationRunnerCfg,
++    RslRlDistillationStudentTeacherRecurrentCfg,
++    RslRlOnPolicyRunnerCfg,
++    RslRlPpoActorCriticCfg,
++    RslRlPpoActorCriticRecurrentCfg,
++    RslRlPpoAlgorithmCfg,
++    RslRlSymmetryCfg,
++)
++
++from go1_lab.tasks.manager_based.go1_lab.mdp import mirror
++from go1_lab.tasks.manager_based.go1_lab.mdp import symmetric_ppo  # noqa: F401  registers SymmetricPPO
++
++
++# =====================================================================
++# Phase 1: Healthy pretrain (정상 보행 선학습)
++# =====================================================================
++
++@configclass
++class HealthyPPOLstmRunnerCfg(RslRlOnPolicyRunnerCfg):
++    """Phase 1: 정상 로봇 보행 pretrain (PPO+LSTM).
++
++    ⭐ 설계 원칙:
++      1. **Teacher(Phase 2) 와 완전히 동일한 policy 아키텍처 + obs dim** 을 사용하여
++         Phase 2 가 Phase 1 체크포인트를 `--resume` 으로 warm-start 할 수 있도록 합니다.
++         → `obs_groups` 에 `privileged_obs` 를 포함 (Phase 1 에서는 [0, 0, 1.0] 로 고정).
++      2. **Isaac Lab 표준 Go1 rough PPO 하이퍼파라미터** 를 최대한 반영
++         (`learning_rate=1e-3`, `num_steps_per_env=24`, entropy/clip/gamma 동일).
++      3. 5 frame observation stacking 은 LSTM 과 중복 메모리이므로 비사용
++         (env_cfg 에서 history_length 오버라이드 제거함).
++    """
++
++    num_steps_per_env = 24
++    # LSTM 은 MLP 대비 수렴이 2-3× 느림. 표준 Go1 rough(MLP 1500) 와 "동등 수준"
++    # baseline 을 확보하려면 약 5-6k iter 가 필요. 3k 는 trot 기본 구조는 나오지만
++    # duty factor 편차/CoM sway 가 완전히 수렴하지 않는 경우가 있어 6000 로 상향.
++    max_iterations = 6000
++    save_interval = 100
++    experiment_name = "unitree_go1_rough_healthy"
++    check_for_nan = True
++
++    # Teacher 와 동일한 obs_groups — Phase 2 에서 resume 시 dim mismatch 없음.
++    obs_groups = {
++        "policy": ["policy", "privileged_obs"],
++        "critic": ["policy", "privileged_obs"],
++    }
++
++    policy = RslRlPpoActorCriticRecurrentCfg(
++        init_noise_std=1.0,
++        noise_std_type="log",
++        actor_obs_normalization=False,
++        critic_obs_normalization=False,
++        actor_hidden_dims=[512, 256, 128],
++        critic_hidden_dims=[512, 256, 128],
++        activation="elu",
++        rnn_type="lstm",
++        rnn_hidden_dim=256,
++        rnn_num_layers=1,
++    )
++
++    algorithm = RslRlPpoAlgorithmCfg(
++        value_loss_coef=1.0,
++        use_clipped_value_loss=True,
++        clip_param=0.2,
++        entropy_coef=0.01,
++        num_learning_epochs=5,
++        num_mini_batches=4,
++        # Isaac Lab 표준 Go1 rough 와 동일 (LSTM 도 adaptive schedule 하에서
++        # 1e-3 시작 → 자동으로 줄어들며 안정). 3e-4 는 지나치게 보수적이었음.
++        learning_rate=1.0e-3,
++        schedule="adaptive",
++        gamma=0.99,
++        lam=0.95,
++        desired_kl=0.01,
++        max_grad_norm=1.0,
++    )
++
++
++@configclass
++class PPORunnerCfg(HealthyPPOLstmRunnerCfg):
++    """기본 엔트리포인트: Phase 1 정상 보행 PPO+LSTM."""
++
++    pass
++
++
++@configclass
++class HealthyPPOLstmSymmetryRunnerCfg(HealthyPPOLstmRunnerCfg):
++    """Phase 1 paper baseline with Go1 left/right symmetry augmentation."""
++
++    algorithm = RslRlPpoAlgorithmCfg(
++        value_loss_coef=1.0,
++        use_clipped_value_loss=True,
++        clip_param=0.2,
++        entropy_coef=0.005,
++        num_learning_epochs=5,
++        num_mini_batches=4,
++        learning_rate=3.0e-4,
++        schedule="adaptive",
++        gamma=0.99,
++        lam=0.95,
++        desired_kl=0.01,
++        max_grad_norm=1.0,
++        # Do not set symmetry_cfg for recurrent policies. In this RSL-RL
++        # version, symmetry logging/loss calls act_inference on recurrent
++        # mini-batches and sends a 4-D tensor into the LSTM. LSTM symmetry is
++        # enforced through environment rewards and the external paper selectors.
++    )
++
++
++@configclass
++class HealthyPPOLstmMirrorRunnerCfg(HealthyPPOLstmRunnerCfg):
++    """Phase 1 healthy baseline with LSTM-compatible left/right mirror augmentation.
++
++    Identical architecture / obs_groups / hyperparameters to the plain LSTM
++    baseline; only the PPO algorithm class is swapped to ``SymmetricPPO``, which
++    mirror-doubles the rollout storage before each update (works with recurrent
++    policies, unlike RSL-RL's built-in symmetry_cfg). The reward is untouched —
++    this enforces the paper's normal-gait mirror-symmetry constraint structurally.
++    """
++
++    algorithm = RslRlPpoAlgorithmCfg(
++        class_name="SymmetricPPO",
++        value_loss_coef=1.0,
++        use_clipped_value_loss=True,
++        clip_param=0.2,
++        entropy_coef=0.01,
++        num_learning_epochs=5,
++        num_mini_batches=4,
++        learning_rate=1.0e-3,
++        schedule="adaptive",
++        gamma=0.99,
++        lam=0.95,
++        desired_kl=0.01,
++        max_grad_norm=1.0,
++    )
+ 
+ 
+ @configclass
+-class PPORunnerCfg(RslRlOnPolicyRunnerCfg):
+-    num_steps_per_env = 16
+-    max_iterations = 150
++class HealthyPPOLstmDutyRefineRunnerCfg(HealthyPPOLstmRunnerCfg):
++    """Short LSTM refine that preserves force symmetry and fixes duty/trot."""
++
++    max_iterations = 1500
++    save_interval = 100
++    run_name = "phase1_default_duty_trot_refine"
++
++    algorithm = RslRlPpoAlgorithmCfg(
++        value_loss_coef=1.0,
++        use_clipped_value_loss=True,
++        clip_param=0.12,
++        entropy_coef=0.004,
++        num_learning_epochs=5,
++        num_mini_batches=4,
++        learning_rate=1.0e-4,
++        schedule="adaptive",
++        gamma=0.99,
++        lam=0.95,
++        desired_kl=0.006,
++        max_grad_norm=0.7,
++        # The warm-start checkpoint already has good force symmetry. This stage
++        # corrects duty factor and trot timing. Do not set symmetry_cfg here:
++        # recurrent symmetry logging in this RSL-RL version feeds a 4-D tensor
++        # to the LSTM. Symmetry is enforced by rewards and paper selectors.
++    )
++
++
++@configclass
++class HealthyPPOLstmTrotBoostRunnerCfg(HealthyPPOLstmRunnerCfg):
++    """Phase 1 trot-boost refine: push trot_score from 0.90 to 0.92+
++    while holding FL/FR force SI ≤ 5%.
++
++    Root cause of previous instability:
++      force_asym weight (-0.0008) was 100x weaker than duty_target (-0.080).
++      Duty targets pushed the policy toward patterns that broke force balance.
++
++    Fix:
++      • LR 3x lower (3e-5) — prevents large policy jumps that break SI
++      • KL limit 2x tighter (0.003) — conservative per-step updates
++      • force_asym 15x stronger (via GO1_CONTACT_FORCE_ASYM_WEIGHT env)
++      • duty_target 4x weaker — SI stabilisation is the priority
++      • trot_sync slightly stronger — nudges trot from 0.90→0.92
++
++    Start from the paper-grade Phase 1 checkpoint (model_6100) which
++    already satisfies all gates except trot_score.
++    """
++
++    max_iterations = 600
+     save_interval = 50
+-    experiment_name = "cartpole_direct"
++    run_name = "phase1_trot_boost_from_6100"
++
++    algorithm = RslRlPpoAlgorithmCfg(
++        value_loss_coef=1.0,
++        use_clipped_value_loss=True,
++        clip_param=0.08,
++        entropy_coef=0.002,
++        num_learning_epochs=5,
++        num_mini_batches=4,
++        learning_rate=3.0e-5,
++        schedule="adaptive",
++        gamma=0.99,
++        lam=0.95,
++        desired_kl=0.003,
++        max_grad_norm=0.5,
++    )
++
++
++@configclass
++class OfficialGo1SymmetryRunnerCfg(RslRlOnPolicyRunnerCfg):
++    """Phase 1 symmetry fine-tune compatible with Isaac Lab's official Go1 MLP.
++
++    This runner intentionally keeps the official Go1 policy surface:
++    policy-only observations, MLP actor/critic, 24 rollout steps, and the
++    standard PPO hyperparameters. That makes Isaac Lab's published
++    `Isaac-Velocity-Rough-Unitree-Go1-v0` checkpoint load cleanly, then the
++    environment-level symmetry rewards and mirror data augmentation can correct
++    left/right force and duty bias for the paper baseline.
++    """
++
++    num_steps_per_env = 24
++    max_iterations = 6000
++    save_interval = 100
++    experiment_name = "unitree_go1_rough_healthy"
++    run_name = "phase1_official_symmetric"
++    check_for_nan = True
++
++    obs_groups = {
++        "policy": ["policy"],
++        "critic": ["policy"],
++    }
++
+     policy = RslRlPpoActorCriticCfg(
+         init_noise_std=1.0,
+         actor_obs_normalization=False,
+         critic_obs_normalization=False,
+-        actor_hidden_dims=[32, 32],
+-        critic_hidden_dims=[32, 32],
++        actor_hidden_dims=[512, 256, 128],
++        critic_hidden_dims=[512, 256, 128],
+         activation="elu",
+     )
++
++    algorithm = RslRlPpoAlgorithmCfg(
++        value_loss_coef=1.0,
++        use_clipped_value_loss=True,
++        clip_param=0.2,
++        entropy_coef=0.005,
++        num_learning_epochs=5,
++        num_mini_batches=4,
++        learning_rate=3.0e-4,
++        schedule="adaptive",
++        gamma=0.99,
++        lam=0.95,
++        desired_kl=0.01,
++        max_grad_norm=1.0,
++        symmetry_cfg=RslRlSymmetryCfg(
++            use_data_augmentation=True,
++            data_augmentation_func=mirror.compute_symmetric_states,
++        ),
++    )
++
++
++@configclass
++class OfficialGo1SymmetryRefineRunnerCfg(OfficialGo1SymmetryRunnerCfg):
++    """Short low-LR refinement from a near-symmetric official Go1 checkpoint."""
++
++    max_iterations = 1200
++    save_interval = 100
++    run_name = "phase1_official_symmetric_front_refine"
++
++    algorithm = RslRlPpoAlgorithmCfg(
++        value_loss_coef=1.0,
++        use_clipped_value_loss=True,
++        clip_param=0.12,
++        entropy_coef=0.003,
++        num_learning_epochs=5,
++        num_mini_batches=4,
++        learning_rate=1.0e-4,
++        schedule="adaptive",
++        gamma=0.99,
++        lam=0.95,
++        desired_kl=0.006,
++        max_grad_norm=0.7,
++        symmetry_cfg=RslRlSymmetryCfg(
++            use_data_augmentation=True,
++            data_augmentation_func=mirror.compute_symmetric_states,
++        ),
++    )
++
++
++# =====================================================================
++# RMA-canonical feedforward (MLP) teacher pipeline + exact mirror symmetry
++# =====================================================================
++# The recurrent (LSTM) teacher cannot be made left/right symmetric: the antalgic
++# commitment lives in the LSTM hidden state, which has no canonical mirror, so
++# data augmentation cannot enforce equivariance. In canonical RMA the teacher is
++# FEEDFORWARD (it observes the privileged state directly, so needs no memory);
++# recurrence belongs to the student adaptation module. A feedforward teacher
++# makes mirror data-augmentation EXACT → reliably mirror-symmetric injury
++# responses. The deployed student (Phase 3) stays recurrent (LSTM).
++
++@configclass
++class HealthyMlpSymmetryRunnerCfg(RslRlOnPolicyRunnerCfg):
++    """Phase 1 healthy pretrain — feedforward MLP + exact left/right mirror aug.
++
++    Matches the MLP teacher's architecture / obs_groups (policy + privileged) so
++    Phase 2 can warm-start from it. ``privileged_obs`` is constant in Phase 1
++    ([0,0,1.0]); the mirror callback maps the (normal) injury index to itself.
++    """
++
++    num_steps_per_env = 24
++    max_iterations = 6000
++    save_interval = 100
++    experiment_name = "unitree_go1_rough_healthy"
++    run_name = "phase1_mlp_symmetric"
++    check_for_nan = True
++
++    obs_groups = {
++        "policy": ["policy", "privileged_obs"],
++        "critic": ["policy", "privileged_obs"],
++    }
++
++    policy = RslRlPpoActorCriticCfg(
++        init_noise_std=1.0,
++        actor_obs_normalization=False,
++        critic_obs_normalization=False,
++        actor_hidden_dims=[512, 256, 128],
++        critic_hidden_dims=[512, 256, 128],
++        activation="elu",
++    )
++
+     algorithm = RslRlPpoAlgorithmCfg(
+         value_loss_coef=1.0,
+         use_clipped_value_loss=True,
+@@ -35,4 +346,217 @@ class PPORunnerCfg(RslRlOnPolicyRunnerCfg):
+         lam=0.95,
+         desired_kl=0.01,
+         max_grad_norm=1.0,
+-    )
+\ No newline at end of file
++        # Clean left/right mirror data augmentation (mirror minibatch only). On a
++        # proprioception-only (R^48) policy + flat symmetric terrain this is
++        # enough for a symmetric gait — the confounds that previously broke the
++        # closed-loop limit cycle (187-dim height_scan, asymmetric rough terrain)
++        # are removed. NOTE: an explicit mirror_loss term destabilised the gait
++        # (CoM sway 0.02→0.10) and stacking balance rewards over-constrained it,
++        # so neither is used. The reward stays the standard locomotion reward.
++        symmetry_cfg=RslRlSymmetryCfg(
++            use_data_augmentation=True,
++            data_augmentation_func=mirror.compute_symmetric_states,
++        ),
++    )
++
++
++@configclass
++class HealthyMlpSymmetryRefineRunnerCfg(HealthyMlpSymmetryRunnerCfg):
++    """Phase 1 low-LR symmetry REFINE from a good-trot MLP checkpoint.
++
++    Single-shot from-scratch symmetric-trot training is high variance (a good
++    trot emerges but left/right force balance — esp. the rear — is unreliable).
++    The proven path (cf. the LSTM model_6100 baseline) is multi-stage: train a
++    good trot first, then low-LR refine with the closed-loop balance rewards to
++    pin force/duty symmetry WITHOUT disturbing the gait. Warm-start from the
++    good-trot checkpoint; keep mirror data augmentation; balance rewards are
++    supplied via GO1_PHASE1_BALANCE_REWARDS=1.
++    """
++
++    max_iterations = 2500
++    save_interval = 100
++    run_name = "phase1_mlp_symmetric_refine"
++
++    algorithm = RslRlPpoAlgorithmCfg(
++        value_loss_coef=1.0,
++        use_clipped_value_loss=True,
++        clip_param=0.10,
++        entropy_coef=0.002,
++        num_learning_epochs=5,
++        num_mini_batches=4,
++        learning_rate=1.0e-4,
++        schedule="adaptive",
++        gamma=0.99,
++        lam=0.95,
++        desired_kl=0.006,
++        max_grad_norm=0.7,
++        symmetry_cfg=RslRlSymmetryCfg(
++            use_data_augmentation=True,
++            data_augmentation_func=mirror.compute_symmetric_states,
++        ),
++    )
++
++
++@configclass
++class TeacherMlpSymmetryRunnerCfg(HealthyMlpSymmetryRunnerCfg):
++    """Phase 2 antalgic teacher — feedforward MLP + exact left/right mirror aug.
++
++    Identical architecture / obs_groups to the Phase 1 MLP baseline (warm-start
++    compatible). The peg-leg environment + privileged injury index are supplied
++    via ``GO1_PHASE=teacher``. The antalgic reward (eq.3) is untouched; mirror
++    augmentation is exact for this feedforward policy, so left- and right-injury
++    cases become mirror images.
++    """
++
++    max_iterations = 5000
++    save_interval = 50
++    experiment_name = "unitree_go1_rough_teacher"
++    run_name = "phase2_mlp_teacher_symmetric"
++
++
++# =====================================================================
++# Phase 2: Teacher (peg-leg 환경 + privileged obs)
++# =====================================================================
++
++@configclass
++class TeacherRunnerCfg(RslRlOnPolicyRunnerCfg):
++    """Phase 2: Teacher PPO+LSTM (privileged obs 포함).
++
++    Teacher 는 privileged_obs(부상 다리, 부목 길이, 마찰) 를 직접 관측해 최적 보행을 학습합니다.
++
++    ⭐ **Phase 1 warm-start 구조**:
++      - `HealthyPPOLstmRunnerCfg` 와 동일한 아키텍처/obs dim 이므로 Phase 1 체크포인트를
++        `--resume --load_run healthy_vX --checkpoint model_N.pt` 로 이어서 학습 가능.
++      - Phase 1: 정상 env 만 (peg-leg 없음) → 기본 보행 학습.
++      - Phase 2: peg-leg 시나리오 50% 포함 → 기본 보행 유지 + 부상 적응 추가 학습.
++    """
++
++    num_steps_per_env = 24
++    # Phase 1 에서 이미 보행이 학습되었으므로 Teacher 는 peg-leg 적응에만 집중.
++    max_iterations = 5000
++    save_interval = 50
++    experiment_name = "unitree_go1_rough_teacher"
++    check_for_nan = True
++
++    obs_groups = {
++        "policy": ["policy", "privileged_obs"],
++        "critic": ["policy", "privileged_obs"],
++    }
++
++    policy = RslRlPpoActorCriticRecurrentCfg(
++        init_noise_std=1.0,
++        noise_std_type="log",
++        actor_obs_normalization=False,
++        critic_obs_normalization=False,
++        actor_hidden_dims=[512, 256, 128],
++        critic_hidden_dims=[512, 256, 128],
++        activation="elu",
++        rnn_type="lstm",
++        rnn_hidden_dim=256,
++        rnn_num_layers=1,
++    )
++
++    algorithm = RslRlPpoAlgorithmCfg(
++        value_loss_coef=1.0,
++        use_clipped_value_loss=True,
++        clip_param=0.2,
++        entropy_coef=0.01,
++        num_learning_epochs=5,
++        num_mini_batches=4,
++        learning_rate=3.0e-4,
++        schedule="adaptive",
++        gamma=0.99,
++        lam=0.95,
++        desired_kl=0.01,
++        max_grad_norm=1.0,
++    )
++
++
++@configclass
++class TeacherMirrorRunnerCfg(TeacherRunnerCfg):
++    """Phase 2 Teacher (peg-leg + privileged obs) with LSTM-compatible left/right
++    mirror augmentation.
++
++    Same architecture / obs_groups / hyperparameters as ``TeacherRunnerCfg``; only
++    the PPO algorithm class is swapped to ``SymmetricPPO`` (storage-level mirror
++    doubling, recurrent-safe). The antalgic reward (eq.3: task − energy − pain) is
++    NOT modified — mirror augmentation is a structural constraint that makes
++    left-injury and right-injury cases mirror images while the antalgic response
++    still emerges from the pain/energy objective.
++    """
++
++    algorithm = RslRlPpoAlgorithmCfg(
++        class_name="SymmetricPPO",
++        value_loss_coef=1.0,
++        use_clipped_value_loss=True,
++        clip_param=0.2,
++        entropy_coef=0.01,
++        num_learning_epochs=5,
++        num_mini_batches=4,
++        learning_rate=3.0e-4,
++        schedule="adaptive",
++        gamma=0.99,
++        lam=0.95,
++        desired_kl=0.01,
++        max_grad_norm=1.0,
++    )
++
++
++# =====================================================================
++# Phase 3: Student Distillation (Teacher latent 모사)
++# =====================================================================
++
++@configclass
++class DistillRunnerCfg(RslRlDistillationRunnerCfg):
++    """Phase 3: Student distillation.
++
++    Teacher(Phase 2)를 동결하고 Student LSTM이
++    proprioceptive history만으로 Teacher의 latent z_t를 추정합니다.
++
++    loss: ||z_t - z_hat_t||² (MSE)
++    """
++
++    num_steps_per_env = 32
++    # Phase 2 teacher 가 15000 iter 로 학습되었을 때, student 가 교사의 latent 를
++    # 5가지 시나리오(정상 + FL/FR/RL/RR 부상) 전체에 걸쳐 모사하기 위해 권장 12000 iter.
++    # 근거:
++    #   - sample-equivalent: Phase 2(15k × 24 × 4096) = 1.47B → Phase 3 에서 동일 경험 확보에
++    #     약 11250 iter (32 × 4096) 필요. 12000 은 그에 소폭 여유 추가.
++    #   - 다중 시나리오 LSTM distillation 은 60-80% of teacher time 이 경험적 sweet spot.
++    #   - Loss plateau 에 도달하면 save_interval 로 저장된 중간 체크포인트에서 조기 중단 가능.
++    max_iterations = 12000
++    save_interval = 100
++    experiment_name = "unitree_go1_rough_student"
++    check_for_nan = True
++
++    obs_groups = {
++        "student": ["policy"],
++        "teacher": ["policy", "privileged_obs"],
++    }
++
++    policy = RslRlDistillationStudentTeacherRecurrentCfg(
++        init_noise_std=0.05,
++        noise_std_type="log",
++        student_obs_normalization=False,
++        teacher_obs_normalization=False,
++        student_hidden_dims=[512, 256, 128],
++        teacher_hidden_dims=[512, 256, 128],
++        activation="elu",
++        rnn_type="lstm",
++        rnn_hidden_dim=256,
++        rnn_num_layers=1,
++        teacher_recurrent=True,
++    )
++
++    algorithm = RslRlDistillationAlgorithmCfg(
++        num_learning_epochs=5,
++        # 1e-3는 LSTM distillation에서 불안정/편향(한쪽 다리만 잘 배우는 현상)을
++        # 유발할 수 있음. 5e-4로 낮춰 수렴을 안정화.
++        learning_rate=5.0e-4,
++        # BPTT 윈도우: 20→32로 늘려 보행 주기(약 20~30 step) + 부상 적응 long-horizon 패턴을
++        # Student가 모사할 수 있도록 함. num_steps_per_env=32와 정렬.
++        gradient_length=32,
++        max_grad_norm=1.0,
++        optimizer="adam",
++        loss_type="mse",
++    )
+diff --git a/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/go1_lab_env_cfg.py b/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/go1_lab_env_cfg.py
+index efb3008..7de6dba 100644
+--- a/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/go1_lab_env_cfg.py
++++ b/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/go1_lab_env_cfg.py
+@@ -3,178 +3,711 @@
+ #
+ # SPDX-License-Identifier: BSD-3-Clause
+ 
+-import math
++"""Go1 Lab 환경 설정 - 표준 Go1 Rough 환경을 상속받아 의족(Peg Leg) 시나리오 랜덤화 추가."""
+ 
+-import isaaclab.sim as sim_utils
+-from isaaclab.assets import ArticulationCfg, AssetBaseCfg
+-from isaaclab.envs import ManagerBasedRLEnvCfg
++import os
++
++from isaaclab.envs import mdp as mdp_base
++from isaaclab.managers import CurriculumTermCfg as CurTerm
+ from isaaclab.managers import EventTermCfg as EventTerm
+ from isaaclab.managers import ObservationGroupCfg as ObsGroup
+ from isaaclab.managers import ObservationTermCfg as ObsTerm
+ from isaaclab.managers import RewardTermCfg as RewTerm
+ from isaaclab.managers import SceneEntityCfg
+ from isaaclab.managers import TerminationTermCfg as DoneTerm
+-from isaaclab.scene import InteractiveSceneCfg
+ from isaaclab.utils import configclass
+ 
+-from . import mdp
+-
+-##
+-# Pre-defined configs
+-##
+-
+-from isaaclab_assets.robots.cartpole import CARTPOLE_CFG  # isort:skip
+-
+-
+-##
+-# Scene definition
+-##
+-
+-
+-@configclass
+-class Go1LabSceneCfg(InteractiveSceneCfg):
+-    """Configuration for a cart-pole scene."""
+-
+-    # ground plane
+-    ground = AssetBaseCfg(
+-        prim_path="/World/ground",
+-        spawn=sim_utils.GroundPlaneCfg(size=(100.0, 100.0)),
++try:
++    from isaaclab_tasks.manager_based.locomotion.velocity.config.go1.rough_env_cfg import (
++        UnitreeGo1RoughEnvCfg,
+     )
++except ImportError:
++    try:
++        from isaaclab_tasks.utils.parse_cfg import load_cfg_from_registry
++
++        _base_cfg_instance = load_cfg_from_registry(
++            "Isaac-Velocity-Rough-Unitree-Go1-v0", "env_cfg_entry_point"
++        )
++        UnitreeGo1RoughEnvCfg = type(_base_cfg_instance)
++    except Exception as e:
++        raise ImportError(
++            f"표준 Unitree Go1 Rough 환경 설정을 찾을 수 없습니다. "
++            f"Isaac Lab이 올바르게 설치되어 있는지 확인하세요. 오류: {e}"
++        )
+ 
+-    # robot
+-    robot: ArticulationCfg = CARTPOLE_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+-
+-    # lights
+-    dome_light = AssetBaseCfg(
+-        prim_path="/World/DomeLight",
+-        spawn=sim_utils.DomeLightCfg(color=(0.9, 0.9, 0.9), intensity=500.0),
+-    )
++from . import mdp
++from .mdp.events import (
++    randomize_peg_leg_actuation,
++    peg_leg_curriculum,
++    enforce_peg_leg_constraints,
++)
+ 
+ 
+ ##
+-# MDP settings
++# Environment configuration
+ ##
+ 
+ 
+ @configclass
+-class ActionsCfg:
+-    """Action specifications for the MDP."""
+-
+-    joint_effort = mdp.JointEffortActionCfg(asset_name="robot", joint_names=["slider_to_cart"], scale=100.0)
+-
+-
+-@configclass
+-class ObservationsCfg:
+-    """Observation specifications for the MDP."""
++class Go1LabPrivilegedObsCfg(ObsGroup):
++    """Teacher 전용 privileged observation (2차원).
+ 
+-    @configclass
+-    class PolicyCfg(ObsGroup):
+-        """Observations for policy group."""
++    Student LSTM 출력 target:
++    [0] 부상 상태 index: 0=정상, 1=FL, 2=FR, 3=RL, 4=RR
++    [1] 부목 등가 길이 (m): Go1 역기구학 기반
++    [2] 발 마찰 계수
++    """
+ 
+-        # observation terms (order preserved)
+-        joint_pos_rel = ObsTerm(func=mdp.joint_pos_rel)
+-        joint_vel_rel = ObsTerm(func=mdp.joint_vel_rel)
++    peg_leg_index = ObsTerm(func=mdp.peg_leg_index)
++    peg_leg_splint_length = ObsTerm(func=mdp.peg_leg_splint_length)
++    peg_leg_foot_friction = ObsTerm(func=mdp.peg_leg_foot_friction)
+ 
+-        def __post_init__(self) -> None:
+-            self.enable_corruption = False
+-            self.concatenate_terms = True
+-
+-    # observation groups
+-    policy: PolicyCfg = PolicyCfg()
+-
+-
+-@configclass
+-class EventCfg:
+-    """Configuration for events."""
+-
+-    # reset
+-    reset_cart_position = EventTerm(
+-        func=mdp.reset_joints_by_offset,
+-        mode="reset",
+-        params={
+-            "asset_cfg": SceneEntityCfg("robot", joint_names=["slider_to_cart"]),
+-            "position_range": (-1.0, 1.0),
+-            "velocity_range": (-0.5, 0.5),
+-        },
+-    )
+-
+-    reset_pole_position = EventTerm(
+-        func=mdp.reset_joints_by_offset,
+-        mode="reset",
+-        params={
+-            "asset_cfg": SceneEntityCfg("robot", joint_names=["cart_to_pole"]),
+-            "position_range": (-0.25 * math.pi, 0.25 * math.pi),
+-            "velocity_range": (-0.25 * math.pi, 0.25 * math.pi),
+-        },
+-    )
+-
+-
+-@configclass
+-class RewardsCfg:
+-    """Reward terms for the MDP."""
+-
+-    # (1) Constant running reward
+-    alive = RewTerm(func=mdp.is_alive, weight=1.0)
+-    # (2) Failure penalty
+-    terminating = RewTerm(func=mdp.is_terminated, weight=-2.0)
+-    # (3) Primary task: keep pole upright
+-    pole_pos = RewTerm(
+-        func=mdp.joint_pos_target_l2,
+-        weight=-1.0,
+-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["cart_to_pole"]), "target": 0.0},
+-    )
+-    # (4) Shaping tasks: lower cart velocity
+-    cart_vel = RewTerm(
+-        func=mdp.joint_vel_l1,
+-        weight=-0.01,
+-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["slider_to_cart"])},
+-    )
+-    # (5) Shaping tasks: lower pole angular velocity
+-    pole_vel = RewTerm(
+-        func=mdp.joint_vel_l1,
+-        weight=-0.005,
+-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["cart_to_pole"])},
+-    )
+-
+-
+-@configclass
+-class TerminationsCfg:
+-    """Termination terms for the MDP."""
+-
+-    # (1) Time out
+-    time_out = DoneTerm(func=mdp.time_out, time_out=True)
+-    # (2) Cart out of bounds
+-    cart_out_of_bounds = DoneTerm(
+-        func=mdp.joint_pos_out_of_manual_limit,
+-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["slider_to_cart"]), "bounds": (-3.0, 3.0)},
+-    )
+-
+-
+-##
+-# Environment configuration
+-##
++    def __post_init__(self):
++        self.enable_corruption = False
++        self.concatenate_terms = True
+ 
+ 
+ @configclass
+-class Go1LabEnvCfg(ManagerBasedRLEnvCfg):
+-    # Scene settings
+-    scene: Go1LabSceneCfg = Go1LabSceneCfg(num_envs=4096, env_spacing=4.0)
+-    # Basic settings
+-    observations: ObservationsCfg = ObservationsCfg()
+-    actions: ActionsCfg = ActionsCfg()
+-    events: EventCfg = EventCfg()
+-    # MDP settings
+-    rewards: RewardsCfg = RewardsCfg()
+-    terminations: TerminationsCfg = TerminationsCfg()
+-
+-    # Post initialization
+-    def __post_init__(self) -> None:
+-        """Post initialization."""
+-        # general settings
+-        self.decimation = 2
+-        self.episode_length_s = 5
+-        # viewer settings
+-        self.viewer.eye = (8.0, 0.0, 5.0)
+-        # simulation settings
+-        self.sim.dt = 1 / 120
+-        self.sim.render_interval = self.decimation
+\ No newline at end of file
++class Go1LabEnvCfg(UnitreeGo1RoughEnvCfg):
++    """Go1 Lab 환경 설정.
++
++    3-phase 학습 파이프라인:
++      Phase 1 (GO1_PHASE=healthy): 정상 보행 pretrain
++      Phase 2 (GO1_PHASE=teacher): peg-leg 환경 + privileged obs → Teacher PPO
++      Phase 3 (GO1_PHASE=student): Teacher checkpoint 로드 → Student distill
++    """
++
++    def __post_init__(self):
++        super().__post_init__()
++
++        # =================================================================
++        # 1. Phase & Eval Mode
++        # =================================================================
++        # GO1_PHASE    : "healthy" | "teacher" | "student"
++        # GO1_EVAL_MODE: "random"(학습) | "normal" | "fl_peg" | "fr_peg" | "rl_peg" | "rr_peg"
++        phase = os.getenv("GO1_PHASE", "healthy").strip().lower()
++        eval_mode = os.getenv("GO1_EVAL_MODE", "random").strip().lower()
++        enable_peg_leg = phase in {"teacher", "student"}
++        self.use_peg_leg_action_mask = enable_peg_leg
++
++        # =================================================================
++        # 2. Scene & Observation
++        # =================================================================
++        if hasattr(self, "scene"):
++            # ⚠️ 주의: Healthy/Peg-leg 여부와 상관없이 무조건 False로 두어야 합니다.
++            # replicate_physics=True 로 설정할 경우, Isaac Sim PhysX 엔진에서 발바닥과 몸통의 
++            # 접촉(Contact) 센서(ContactSensor)를 초기화하지 못하고 튕기는 치명적 에러가 발생합니다.
++            if hasattr(self.scene, "replicate_physics"):
++                self.scene.replicate_physics = False
++            if hasattr(self.scene, "clone_in_fabric"):
++                self.scene.clone_in_fabric = False
++
++        # ⚠️ history_length 은 모든 Phase에서 1로 유지합니다.
++        # LSTM policy 가 시계열 메모리를 담당하므로 입력 frame stacking 은 불필요합니다.
++        # 특히 Phase 3 Distillation 에서는 Teacher 가 H=1 로 학습된 체크포인트를
++        # 로드하는데, H>1 로 설정하면 Teacher LSTM 입력 차원이 달라져 로드 실패합니다.
++        self.observations.policy.history_length = 1
++
++        # Proprioception-only policy observation (GO1_PROPRIO_ONLY=1). The paper
++        # is explicit: proprioception-only R^48, "no exteroceptive sensing"
++        # (abstract, contribution iii, §4.3). The 187-dim height_scan both
++        # violates that and bloats the obs (235→48), which made a clean
++        # left/right-symmetric gait hard to converge (open-loop mirror
++        # equivariance was tight but the closed-loop limit cycle still leaned).
++        # Removing it restores the paper's blind locomotion structure and makes
++        # the mirror transform trivial (no height grid). The privileged_obs group
++        # (teacher only) is unaffected.
++        if os.getenv("GO1_PROPRIO_ONLY", "0").strip().lower() in {"1", "true", "yes", "on"}:
++            if hasattr(self.observations.policy, "height_scan"):
++                self.observations.policy.height_scan = None
++
++        # Optional flat terrain for TRAINING (GO1_FLAT_TERRAIN=1). The paper is
++        # flat / proprioception-only; training on ROUGH terrain + height_scan
++        # introduces a systematic left-right bias (probe on flat is symmetric,
++        # but rough-terrain training consistently commits to FR). Flattening
++        # makes the height_scan constant → removes that bias source.
++        if os.getenv("GO1_FLAT_TERRAIN", "0").strip().lower() in {"1", "true", "yes", "on"}:
++            if hasattr(self.scene, "terrain"):
++                _terr = self.scene.terrain
++                if hasattr(_terr, "terrain_type"):
++                    _terr.terrain_type = "plane"
++                if hasattr(_terr, "terrain_generator"):
++                    _terr.terrain_generator = None
++            # terrain_levels curriculum needs a terrain_generator; disable on flat.
++            if hasattr(self, "curriculum") and hasattr(self.curriculum, "terrain_levels"):
++                self.curriculum.terrain_levels = None
++
++        # 모든 Phase에서 privileged obs 등록 (Phase 1 → Phase 2 warm-start 호환성 보장)
++        # Phase 1(healthy)에서는 값이 [0, 0, 1.0] (정상, 부목 없음, 기본 마찰) 로 고정되어
++        # Teacher(Phase 2) 와 동일한 observation dim 을 유지합니다.
++        if hasattr(self, "observations"):
++            self.observations.privileged_obs = Go1LabPrivilegedObsCfg()
++
++        # =================================================================
++        # [NEW] 생물학적 무게 중심(CoM) 이동을 위한 Payload 추가
++        # =================================================================
++        # 실제 개(Dog)의 전방 치우친 무게 배분을 모사하기 위해 trunk에 payload를 추가하고 CoM을 전방 이동.
++        # 이 설정을 통해 부상 시 뒷다리를 끄는(Dragging) RL의 꼼수를 물리적으로 원천 차단합니다.
++        if hasattr(self, "events"):
++            from isaaclab.envs.mdp.events import (
++                randomize_rigid_body_mass,
++                randomize_rigid_body_com,
++            )
++
++            # 기존 UnitreeGo1RoughEnvCfg에서 상속된 add_base_mass 무효화 (클래스 기반 이벤트인데 mode="startup"으로 설정되어 있어 에러 발생)
++            if hasattr(self.events, "add_base_mass"):
++                self.events.add_base_mass = None
++
++            # Go1 trunk 앞쪽에 얹은 payload를 등가적으로 모델링합니다.
++            # 기본값은 nominal Go1 기준 실험을 위해 비활성화합니다.
++            # 필요하면 환경변수로 실험별 조정:
++            #   GO1_FRONT_PAYLOAD_KG=0.0  -> payload 비활성화
++            #   GO1_FRONT_PAYLOAD_KG=2.0 GO1_FRONT_COM_X_M=0.05
++            front_payload_kg = float(os.getenv("GO1_FRONT_PAYLOAD_KG", "0.0"))
++            front_com_x_m = float(os.getenv("GO1_FRONT_COM_X_M", "0.0"))
++            front_com_z_m = float(os.getenv("GO1_FRONT_COM_Z_M", "0.0"))
++
++            trunk_cfg = SceneEntityCfg("robot", body_names="trunk")
++            if front_payload_kg > 0.0:
++                self.events.front_payload_mass = EventTerm(
++                    func=randomize_rigid_body_mass,
++                    mode="startup",
++                    params={
++                        "asset_cfg": trunk_cfg,
++                        "mass_distribution_params": (front_payload_kg, front_payload_kg),
++                        "operation": "add",
++                        "distribution": "uniform",
++                        "recompute_inertia": True,
++                    },
++                )
++
++            if abs(front_com_x_m) > 0.0 or abs(front_com_z_m) > 0.0:
++                self.events.front_payload_com = EventTerm(
++                    func=randomize_rigid_body_com,
++                    mode="startup",
++                    params={
++                        "asset_cfg": trunk_cfg,
++                        "com_range": {
++                            "x": (front_com_x_m, front_com_x_m),
++                            "y": (0.0, 0.0),
++                            "z": (front_com_z_m, front_com_z_m),
++                        },
++                    },
++                )
++
++        # =================================================================
++        # Domain randomization for sim-to-real (paper §4.8). Gated by
++        # GO1_DOMAIN_RAND=1. Implements ground friction, robot mass, random
++        # pushes, and Gaussian observation noise. Motor-strength and
++        # action-latency randomization are added separately (custom — the
++        # ActuatorNetMLP has no built-in gain randomization).
++        # =================================================================
++        if os.getenv("GO1_DOMAIN_RAND", "0").strip().lower() in {"1", "true", "yes", "on"} and hasattr(self, "events"):
++            from isaaclab.utils.noise import GaussianNoiseCfg
++
++            # (a) ground friction U(0.5, 1.5)
++            if getattr(self.events, "physics_material", None) is not None:
++                self.events.physics_material.params["static_friction_range"] = (0.5, 1.5)
++                self.events.physics_material.params["dynamic_friction_range"] = (0.4, 1.2)
++
++            # (b) robot mass U(0.85, 1.15) × nominal (scale the trunk mass;
++            #     the inherited add_base_mass targets a "base" body absent on Go1)
++            self.events.add_base_mass = EventTerm(
++                func=mdp_base.randomize_rigid_body_mass,
++                mode="startup",
++                params={
++                    "asset_cfg": SceneEntityCfg("robot", body_names="trunk"),
++                    "mass_distribution_params": (0.85, 1.15),
++                    "operation": "scale",
++                    "distribution": "uniform",
++                    "recompute_inertia": True,
++                },
++            )
++
++            # (c) random base pushes for perturbation robustness
++            self.events.push_robot = EventTerm(
++                func=mdp_base.push_by_setting_velocity,
++                mode="interval",
++                interval_range_s=(8.0, 12.0),
++                params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
++            )
++
++            # (d) Gaussian observation noise: joint states N(0,0.02), IMU N(0,0.05)
++            _pol = self.observations.policy
++            for _term, _std in (
++                ("joint_pos", 0.02),
++                ("joint_vel", 0.02),
++                ("base_ang_vel", 0.05),
++                ("projected_gravity", 0.05),
++                ("base_lin_vel", 0.05),
++            ):
++                if getattr(_pol, _term, None) is not None:
++                    getattr(_pol, _term).noise = GaussianNoiseCfg(mean=0.0, std=_std)
++
++        # Phase 1 paper baseline:
++        # 이후 Phase 2/3의 "Normal" 기준이 되는 보행이므로 좌우 force/duty 대칭을
++        # Phase 1부터 직접 맞춥니다. 완전히 순수한 Isaac Lab baseline이 필요하면
++        # GO1_PHASE1_BALANCE_REWARDS=0 으로 끌 수 있습니다.
++        use_phase1_balance_rewards = os.getenv("GO1_PHASE1_BALANCE_REWARDS", "1").strip().lower() in {
++            "1",
++            "true",
++            "yes",
++            "on",
++        }
++        if (not enable_peg_leg) and use_phase1_balance_rewards:
++            self.rewards.contact_force_asymmetry = RewTerm(
++                func=mdp.penalize_contact_force_asymmetry,
++                weight=float(os.getenv("GO1_CONTACT_FORCE_ASYM_WEIGHT", "-0.003")),
++                params={
++                    "ramp_start_steps": int(os.getenv("GO1_CONTACT_FORCE_ASYM_RAMP_START_STEPS", "2000")),
++                    "ramp_duration_steps": int(os.getenv("GO1_CONTACT_FORCE_ASYM_RAMP_STEPS", "6000")),
++                },
++            )
++            self.rewards.duty_factor_asymmetry = RewTerm(
++                func=mdp.penalize_duty_factor_asymmetry,
++                weight=float(os.getenv("GO1_DUTY_FACTOR_ASYM_WEIGHT", "-0.015")),
++                params={
++                    "contact_threshold": float(os.getenv("GO1_PAIN_CONTACT_THRESHOLD_N", "1.0")),
++                    "ramp_start_steps": int(os.getenv("GO1_DUTY_FACTOR_ASYM_RAMP_START_STEPS", "2000")),
++                    "ramp_duration_steps": int(os.getenv("GO1_DUTY_FACTOR_ASYM_RAMP_STEPS", "6000")),
++                },
++            )
++            self.rewards.diagonal_load_asymmetry = RewTerm(
++                func=mdp.penalize_diagonal_load_asymmetry,
++                weight=float(os.getenv("GO1_DIAGONAL_LOAD_ASYM_WEIGHT", "-0.0015")),
++                params={
++                    "ramp_start_steps": int(os.getenv("GO1_DIAGONAL_LOAD_ASYM_RAMP_START_STEPS", "2000")),
++                    "ramp_duration_steps": int(os.getenv("GO1_DIAGONAL_LOAD_ASYM_RAMP_STEPS", "6000")),
++                },
++            )
++            self.rewards.front_rear_load_distribution = RewTerm(
++                func=mdp.penalize_front_rear_load_distribution,
++                weight=float(os.getenv("GO1_FRONT_REAR_LOAD_DIST_WEIGHT", "-0.0005")),
++                params={
++                    "target_front_fraction": float(os.getenv("GO1_FRONT_LOAD_TARGET_FRACTION", "0.60")),
++                    "tolerance": float(os.getenv("GO1_FRONT_LOAD_TARGET_TOLERANCE", "0.10")),
++                    "ramp_start_steps": int(os.getenv("GO1_FRONT_REAR_LOAD_DIST_RAMP_START_STEPS", "2000")),
++                    "ramp_duration_steps": int(os.getenv("GO1_FRONT_REAR_LOAD_DIST_RAMP_STEPS", "6000")),
++                },
++            )
++            self.rewards.trot_sync = RewTerm(
++                func=mdp.reward_trot_synchronization,
++                weight=float(os.getenv("GO1_TROT_SYNC_WEIGHT", "0.03")),
++                params={
++                    "ramp_start_steps": int(os.getenv("GO1_TROT_SYNC_RAMP_START_STEPS", "2000")),
++                    "ramp_duration_steps": int(os.getenv("GO1_TROT_SYNC_RAMP_STEPS", "6000")),
++                },
++            )
++            self.rewards.duty_factor_deviation = RewTerm(
++                func=mdp.penalize_duty_factor_deviation,
++                weight=float(os.getenv("GO1_DUTY_FACTOR_DEVIATION_WEIGHT", "0.0")),
++                params={
++                    "contact_threshold": float(os.getenv("GO1_PAIN_CONTACT_THRESHOLD_N", "1.0")),
++                    "target_contact_count": float(os.getenv("GO1_TARGET_CONTACT_COUNT", "2.0")),
++                },
++            )
++            _target_duty = tuple(
++                float(v)
++                for v in os.getenv("GO1_LEG_DUTY_TARGETS", "0.55,0.55,0.50,0.50").split(",")
++            )
++            if len(_target_duty) != 4:
++                raise ValueError(
++                    "GO1_LEG_DUTY_TARGETS must contain four comma-separated values "
++                    "for FL,FR,RL,RR."
++                )
++            self.rewards.leg_duty_factor_targets = RewTerm(
++                func=mdp.penalize_leg_duty_factor_targets,
++                weight=float(os.getenv("GO1_LEG_DUTY_TARGET_WEIGHT", "0.0")),
++                params={
++                    "contact_threshold": float(os.getenv("GO1_PAIN_CONTACT_THRESHOLD_N", "1.0")),
++                    "target_duty": _target_duty,
++                    "tolerance": float(os.getenv("GO1_LEG_DUTY_TARGET_TOLERANCE", "0.03")),
++                    "ramp_start_steps": int(os.getenv("GO1_LEG_DUTY_TARGET_RAMP_START_STEPS", "2000")),
++                    "ramp_duration_steps": int(os.getenv("GO1_LEG_DUTY_TARGET_RAMP_STEPS", "6000")),
++                },
++            )
++            if hasattr(self.rewards, "feet_air_time"):
++                self.rewards.feet_air_time.weight = float(
++                    os.getenv("GO1_PHASE1_FEET_AIR_TIME_WEIGHT", str(self.rewards.feet_air_time.weight))
++                )
++
++        # Phase 1은 peg-leg curriculum/통증 보상/termination 수정 없이 종료합니다.
++        if not enable_peg_leg:
++            return
++
++        # =================================================================
++        # 3. 보상 설정 방침 (Phase 2/3 Trot 유지 튜닝)
++        # =================================================================
++        # 기본 UnitreeGo1RoughEnvCfg는 feet_air_time이 0.01로 매우 낮아,
++        # 로봇이 발을 거의 떼지 않고 질질 끄는 Tapping(토핑) 보행에 빠지기 쉽습니다.
++        # 인위적인 Trot Symmetry 보상 없이 자연스러운 대각선 보행(Trot)을 창발시키기 위해,
++        # 체공 시간 보상과 흔들림 페널티의 밸런스를 바로잡습니다.
++
++        use_phase2_gait_tuning = os.getenv("GO1_PHASE2_GAIT_TUNING", "1").strip().lower() in {
++            "1",
++            "true",
++            "yes",
++            "on",
++        }
++
++        if use_phase2_gait_tuning and hasattr(self.rewards, "feet_air_time"):
++            # 발을 공중에 충분히 띄우도록 유도 (기존 0.01 -> 0.25)
++            self.rewards.feet_air_time.weight = float(os.getenv("GO1_FEET_AIR_TIME_WEIGHT", "0.25"))
++
++        if use_phase2_gait_tuning and hasattr(self.rewards, "action_rate_l2"):
++            # 다리를 부들부들 떨며 짧게 터치하는 현상 억제 (기존 -0.01 -> -0.05)
++            self.rewards.action_rate_l2.weight = float(os.getenv("GO1_ACTION_RATE_L2_WEIGHT", "-0.05"))
++
++        if use_phase2_gait_tuning and hasattr(self.rewards, "ang_vel_xy_l2"):
++            # 좌우 기우뚱거림(Rolling/Pitching) 강하게 억제
++            # -> Pacing이나 토끼뜀을 방지하고 Trot으로 수렴하게 만듦 (기존 -0.05 -> -0.1)
++            self.rewards.ang_vel_xy_l2.weight = float(os.getenv("GO1_ANG_VEL_XY_L2_WEIGHT", "-0.1"))
++
++        # [Trot 대칭성 보상 추가]
++        # 자연스러운 발현만으로는 좌우 대칭(SI 0%)에 도달하기까지 매우 오랜 학습이 필요하므로,
++        # 정상(Phase 1) 보행에 한하여 좌우/대각 대칭성을 강제하는 보상을 활성화합니다.
++        # (이 보상들은 mdp/rewards.py에 이미 "정상 다리에만 적용되도록" 구현되어 있습니다.)
++        self.rewards.contact_force_asymmetry = RewTerm(
++            func=mdp.penalize_contact_force_asymmetry,
++            weight=float(os.getenv("GO1_CONTACT_FORCE_ASYM_WEIGHT", "-0.012")),
++            params={
++                "ramp_duration_steps": int(os.getenv("GO1_CONTACT_FORCE_ASYM_RAMP_STEPS", "6000")),
++            },
++        )
++        self.rewards.duty_factor_asymmetry = RewTerm(
++            func=mdp.penalize_duty_factor_asymmetry,
++            weight=float(os.getenv("GO1_DUTY_FACTOR_ASYM_WEIGHT", "-0.04")),
++            params={
++                "contact_threshold": float(os.getenv("GO1_PAIN_CONTACT_THRESHOLD_N", "1.0")),
++                "ramp_duration_steps": int(os.getenv("GO1_DUTY_FACTOR_ASYM_RAMP_STEPS", "6000")),
++            },
++        )
++        self.rewards.diagonal_load_asymmetry = RewTerm(
++            func=mdp.penalize_diagonal_load_asymmetry,
++            weight=float(os.getenv("GO1_DIAGONAL_LOAD_ASYM_WEIGHT", "-0.006")),
++            params={
++                "ramp_duration_steps": int(os.getenv("GO1_DIAGONAL_LOAD_ASYM_RAMP_STEPS", "6000")),
++            },
++        )
++        self.rewards.front_rear_load_distribution = RewTerm(
++            func=mdp.penalize_front_rear_load_distribution,
++            weight=float(os.getenv("GO1_FRONT_REAR_LOAD_DIST_WEIGHT", "-0.0025")),
++            params={
++                "target_front_fraction": float(os.getenv("GO1_FRONT_LOAD_TARGET_FRACTION", "0.55")),
++                "tolerance": float(os.getenv("GO1_FRONT_LOAD_TARGET_TOLERANCE", "0.06")),
++                "ramp_duration_steps": int(os.getenv("GO1_FRONT_REAR_LOAD_DIST_RAMP_STEPS", "6000")),
++            },
++        )
++        self.rewards.trot_sync = RewTerm(
++            func=mdp.reward_trot_synchronization,
++            weight=float(os.getenv("GO1_TROT_SYNC_WEIGHT", "0.12")),
++            params={
++                "ramp_duration_steps": int(os.getenv("GO1_TROT_SYNC_RAMP_STEPS", "6000")),
++            },
++        )
++
++        # =================================================================
++        # 4. Phase 2/3 안정화 — 너무 이른 몸통 접촉 종료 방지
++        # =================================================================
++        # Phase 1에서는 Isaac Lab 기본 base_contact termination을 그대로 둡니다.
++        # Phase 2/3에서는 peg-leg 적응 중 trunk가 살짝 닿는 상황이 너무 강한 종료 신호가 될 수 있어,
++        # 대신 "몸통이 너무 낮아진 경우"만 종료하고, 자세는 base_height penalty로 유도합니다.
++        self.rewards.base_height = RewTerm(
++            func=mdp_base.base_height_l2,
++            weight=float(os.getenv("GO1_BASE_HEIGHT_WEIGHT", "-0.3")),
++            params={
++                "target_height": 0.30,
++                "asset_cfg": SceneEntityCfg("robot"),
++            },
++        )
++
++        self.terminations.root_too_low = DoneTerm(
++            func=mdp_base.root_height_below_minimum,
++            params={
++                "minimum_height": float(os.getenv("GO1_ROOT_TOO_LOW_MIN_HEIGHT", "0.15")),
++                "asset_cfg": SceneEntityCfg("robot"),
++            },
++        )
++
++        # Paper §4.3 terminations (opt-in via GO1_STRICT_TERMINATIONS=1):
++        #   terminate on base contact + base roll/pitch beyond ±0.8 rad.
++        # Rationale ("task forces leg use"): without these, the policy can hold
++        # the SHORTER peg leg off the ground (non-use) via tilted/degenerate
++        # postures and still survive. Restoring them forces an upright, stable
++        # 4-leg stance, so the peg must contact and bear load; pain then caps
++        # that load near Fth(=10N) → ~69% GRF reduction (normal per-leg force
++        # ≈ 32N, so 10N ≈ 69% reduction — matches the paper).
++        strict_terminations = os.getenv("GO1_STRICT_TERMINATIONS", "0").strip().lower() in {
++            "1",
++            "true",
++            "yes",
++            "on",
++        }
++        if strict_terminations:
++            self.terminations.bad_orientation = DoneTerm(
++                func=mdp_base.bad_orientation,
++                params={"limit_angle": float(os.getenv("GO1_BAD_ORIENTATION_LIMIT", "0.8"))},
++            )
++            # keep the inherited base_contact termination (do NOT disable it)
++        else:
++            if hasattr(self.terminations, "base_contact"):
++                self.terminations.base_contact = None
++
++        # =================================================================
++        # 5. Peg-leg 시나리오 (Phase 2/3 전용)
++        # =================================================================
++        # ----- 부상 확률/부목 길이 결정 -----
++        prob_peg_leg = max(0.0, min(1.0, float(os.getenv("GO1_PROB_PEG_LEG", "0.5"))))
++        splint_min = float(os.getenv("GO1_SPLINT_LENGTH_MIN", "0.20"))
++        splint_max = float(os.getenv("GO1_SPLINT_LENGTH_MAX", "0.30"))
++        splint_min, splint_max = min(splint_min, splint_max), max(splint_min, splint_max)
++        foot_friction_min = float(os.getenv("GO1_FOOT_FRICTION_MIN", "0.4"))
++        foot_friction_max = float(os.getenv("GO1_FOOT_FRICTION_MAX", "1.0"))
++        foot_friction_min, foot_friction_max = (
++            min(foot_friction_min, foot_friction_max),
++            max(foot_friction_min, foot_friction_max),
++        )
++        target_leg = "random"
++
++        # eval_mode 오버라이드 (평가 모드가 커리큘럼 설정보다 우선)
++        if eval_mode == "normal":
++            target_leg = "normal"
++            prob_peg_leg = 0.0
++        elif eval_mode in {"fl_peg", "fr_peg", "rl_peg", "rr_peg"}:
++            target_leg = eval_mode.replace("_peg", "")
++            prob_peg_leg = 1.0
++        elif eval_mode == "balanced":
++            # Balanced validation keeps Normal/FL/FR/RL/RR at 1:1:1:1:1,
++            # but uses a random permutation so left/right injury conditions do
++            # not stay tied to fixed env ids or terrain shards.
++            target_leg = os.getenv("GO1_BALANCED_TARGET_MODE", "balanced_random").strip().lower()
++            prob_peg_leg = 0.8
++
++        # ----- (A) Peg-leg 리셋 이벤트 (에피소드 시작 시 1회) -----
++        self.events.randomize_peg_leg_actuation = EventTerm(
++            func=randomize_peg_leg_actuation,
++            mode="reset",
++            params={
++                "asset_cfg": SceneEntityCfg("robot"),
++                "prob_peg_leg": prob_peg_leg,
++                "target_leg": target_leg,
++                "prob_joint_disabled": 1.0,
++                "actuation_mode": "locked",
++                "splint_length_range": (splint_min, splint_max),
++                "foot_friction_range": (foot_friction_min, foot_friction_max),
++            },
++        )
++
++        # ----- (A-2) Peg-leg 강제 고정 이벤트 (매 스텝) -----
++        # 관절이 굽혀지지 않도록 매 스텝마다 위치/속도를 강제 고정합니다.
++        self.events.enforce_peg_leg = EventTerm(
++            func=enforce_peg_leg_constraints,
++            mode="interval",
++            interval_range_s=(0.0, 0.0), 
++            params={
++                "asset_cfg": SceneEntityCfg("robot"),
++            },
++        )
++
++        # ----- (B) Peg-leg 커리큘럼 -----
++        # 학습 초기: 10% 부상, 거의 정상 길이(0.30m)
++        # 학습 후기: 50% 부상, 짧은 부목(0.20m)
++        if os.getenv("GO1_USE_PEG_LEG_CURRICULUM", "1").strip().lower() in {"1", "true", "yes", "on"}:
++            self.curriculum.peg_leg_difficulty = CurTerm(
++                func=peg_leg_curriculum,
++                params={
++                    "prob_start": float(os.getenv("GO1_CURRICULUM_PROB_START", "0.1")),
++                    "prob_end": prob_peg_leg,
++                    "prob_ramp_steps": int(os.getenv("GO1_CURRICULUM_PROB_RAMP_STEPS", "5000")),
++                    "splint_start": float(os.getenv("GO1_CURRICULUM_SPLINT_HI_START", "0.33")),
++                    "splint_end": splint_max,
++                    "splint_lo_start": float(os.getenv("GO1_CURRICULUM_SPLINT_LO_START", "0.28")),
++                    "splint_lo_end": splint_min,
++                    "splint_ramp_steps": int(os.getenv("GO1_CURRICULUM_SPLINT_RAMP_STEPS", "8000")),
++                },
++            )
++
++        # =================================================================
++        # 5. Phase 2/3 부상 시나리오 — Emergent Limping
++        # =================================================================
++        #
++        # [연구 논지]
++        #   실제 동물이 다리를 다쳤을 때 '절뚝이는' 보행은 누군가가 가르쳐서
++        #   나오는 것이 아니라, `통증(pain)` 과 `에너지 소비(energy)` 라는 두 가지
++        #   생리학적 비용을 최소화하려는 과정에서 자연선택이 찾은 최적해입니다.
++        #
++        #   이 프로젝트는 강화학습 에이전트에게 그 두 가지 비용 신호만 주고
++        #   (보행 방식을 '처방' 하지 않고) 절뚝임이 emergent behavior 로
++        #   나타남을 보이는 것이 목표입니다.
++        #
++        # [설계 원칙]
++        #   정상 env 와 부상 env 모두 동일한 Phase 1 baseline 보상을 공유합니다
++        #   (track_lin_vel, track_ang_vel, feet_air_time, dof_torques_l2,
++        #   dof_acc_l2, action_rate_l2 등). Phase 2 에서는 부상 env 에
++        #   pain/load-duration 비용과 건측 과부하/완전 비사용 방지용 약한
++        #   생체역학 regularizer만 추가합니다.
++        #
++        # [pain 모델 (include_calf=True)]
++        #   부상 다리의 발(foot) + 정강이(calf) 접촉력을 합산 → 팔다리 전체가
++        #   '아픈 부위'. 무릎 보행 exploit 도 통증으로 자연 차단됩니다.
++        #
++        #     leg_force = |F_z(foot)| + |F_z(calf)|
++        #     pain      = base_cost · 1[leg_force > 1N]                  # 접촉 자체의 통증
++        #               + load_cost · 1[leg_force > load_th]             # 누적 하중 통증
++        #               + clamp(exp(scale · max(leg_force - th, 0)) - 1) # 과부하 통증
++        #
++        # [에너지 패널티]
++        #   Phase 1 baseline 에서 이미 `dof_torques_l2(-0.0002)` 와
++        #   `dof_acc_l2(-2.5e-7)` 이 활성화되어 있어, 모든 관절 사용이
++        #   비용으로 반영됩니다. 별도로 부상 다리만 억제하는 항은 두지 않습니다
++        #   ('에너지 최소화' 는 전신에 공평하게 적용).
++        #
++        # =================================================================
++        #
++        # [v7 핵심 변경점]
++        #   v5/v6: threshold=5N, base_cost=0.15 → 너무 공격적 → 넘어짐 40%
++        #   v7초안: threshold=20N, base_cost=0.05 → 너무 관대 → 드래깅 위험
++        #
++        #   최종 균형점: threshold=12N, base_cost=0.1
++        #   - 12N 이하 접촉(균형 잡기용 톡톡): base_cost(0.1)만 부과
++        #     → 짧게 짚으면 누적 비용 작음, 길게 끌면 누적 비용 큼
++        #   - 12N 초과(체중 실기): 지수적 통증 급등 (pain_scale=0.15)
++        #     → 세게 밟는 것은 강력히 억제
++        #
++        #   드래깅 비용 분석:
++        #     끌기(연속 접촉) = 0.1 × 0.08 = 매 스텝 -0.008 누적
++        #     20스텝 끌기 = -0.16 (상당한 페널티)
++        #     vs. 짧게 2~3스텝 짚기 = -0.016~0.024 (감당 가능)
++        #   → "짧게 짚어서 균형 잡기 OK, 질질 끌기 NO"
++        self.rewards.penalty_pain = RewTerm(
++            func=mdp.penalty_pain,
++            weight=float(os.getenv("GO1_PAIN_WEIGHT", "-0.08")),
++            params={
++                "asset_cfg": SceneEntityCfg("robot"),
++                "sensor_name": "contact_forces",
++                "failure_force_threshold": float(os.getenv("GO1_PAIN_THRESHOLD_N", "12.0")),
++                "pain_scale": float(os.getenv("GO1_PAIN_SCALE", "0.15")),
++                "overload_tolerance": float(os.getenv("GO1_PAIN_OVERLOAD_TOLERANCE", "0.0")),
++                "max_exp_argument": float(os.getenv("GO1_PAIN_MAX_EXP_ARGUMENT", "6.0")),
++                "max_penalty": float(os.getenv("GO1_PAIN_MAX_PENALTY", "20.0")),
++                "base_contact_cost": float(os.getenv("GO1_PAIN_BASE_CONTACT_COST", "2.0")),
++                "contact_detect_threshold": float(os.getenv("GO1_PAIN_CONTACT_THRESHOLD_N", "1.0")),
++                "load_contact_cost": float(os.getenv("GO1_PAIN_LOAD_CONTACT_COST", "0.0")),
++                "load_contact_threshold": float(os.getenv("GO1_LOAD_CONTACT_THRESHOLD_N", "10.0")),
++                "load_contact_cost_severe_multiplier": float(
++                    os.getenv("GO1_PAIN_LOAD_COST_SEVERE_MULT", "1.20")
++                ),
++                "load_contact_cost_mild_multiplier": float(
++                    os.getenv("GO1_PAIN_LOAD_COST_MILD_MULT", "0.80")
++                ),
++                "base_contact_cost_severe_multiplier": float(
++                    os.getenv("GO1_PAIN_BASE_CONTACT_SEVERE_MULT", "1.0")
++                ),
++                "base_contact_cost_mild_multiplier": float(
++                    os.getenv("GO1_PAIN_BASE_CONTACT_MILD_MULT", "1.0")
++                ),
++                "include_calf": os.getenv("GO1_PAIN_INCLUDE_CALF", "1").strip().lower()
++                in {"1", "true", "yes", "on"},
++                "severity_scaled": os.getenv("GO1_PAIN_SEVERITY_SCALING", "0").strip().lower()
++                in {"1", "true", "yes", "on"},
++                "severe_splint_length": splint_min,
++                "mild_splint_length": splint_max,
++                "threshold_severe_multiplier": float(os.getenv("GO1_PAIN_THRESHOLD_SEVERE_MULT", "0.80")),
++                "threshold_mild_multiplier": float(os.getenv("GO1_PAIN_THRESHOLD_MILD_MULT", "1.15")),
++                "scale_severe_multiplier": float(os.getenv("GO1_PAIN_SCALE_SEVERE_MULT", "1.25")),
++                "scale_mild_multiplier": float(os.getenv("GO1_PAIN_SCALE_MILD_MULT", "0.85")),
++            },
++        )
++
++        self.rewards.intact_limb_overload = RewTerm(
++            func=mdp.penalize_intact_limb_overload,
++            weight=float(os.getenv("GO1_INTACT_OVERLOAD_WEIGHT", "0.0")),
++            params={
++                "sensor_name": "contact_forces",
++                "overload_threshold": float(os.getenv("GO1_INTACT_OVERLOAD_THRESHOLD_N", "65.0")),
++                "overload_scale": float(os.getenv("GO1_INTACT_OVERLOAD_SCALE", "1.0")),
++                "max_penalty": float(os.getenv("GO1_INTACT_OVERLOAD_MAX_PENALTY", "120.0")),
++                "use_z_only": True,
++            },
++        )
++
++        self.rewards.injured_limb_force_nonuse = RewTerm(
++            func=mdp.penalize_injured_limb_force_nonuse,
++            weight=float(os.getenv("GO1_INJURED_FORCE_NONUSE_WEIGHT", "0.0")),
++            params={
++                "sensor_name": "contact_forces",
++                "severe_splint_length": splint_min,
++                "mild_splint_length": splint_max,
++                "min_force_severe": float(os.getenv("GO1_INJURED_MIN_FORCE_SEVERE_N", "2.0")),
++                "min_force_mild": float(os.getenv("GO1_INJURED_MIN_FORCE_MILD_N", "11.0")),
++                "front_leg_multiplier": float(os.getenv("GO1_INJURED_MIN_FORCE_FRONT_MULT", "1.15")),
++                "rear_leg_multiplier": float(os.getenv("GO1_INJURED_MIN_FORCE_REAR_MULT", "1.0")),
++                "ema_alpha": float(os.getenv("GO1_INJURED_NONUSE_EMA_ALPHA", "0.995")),
++                "ramp_duration_steps": int(os.getenv("GO1_INJURED_NONUSE_RAMP_STEPS", "8000")),
++                "include_calf": os.getenv("GO1_INJURED_NONUSE_INCLUDE_CALF", "1").strip().lower()
++                in {"1", "true", "yes", "on"},
++            },
++        )
++
++        self.rewards.injured_limb_load_duty_nonuse = RewTerm(
++            func=mdp.penalize_injured_limb_load_duty_nonuse,
++            weight=float(os.getenv("GO1_INJURED_DUTY_NONUSE_WEIGHT", "0.0")),
++            params={
++                "sensor_name": "contact_forces",
++                "load_contact_threshold": float(os.getenv("GO1_LOAD_CONTACT_THRESHOLD_N", "10.0")),
++                "severe_splint_length": splint_min,
++                "mild_splint_length": splint_max,
++                "min_duty_severe": float(os.getenv("GO1_INJURED_MIN_DUTY_SEVERE", "0.05")),
++                "min_duty_mild": float(os.getenv("GO1_INJURED_MIN_DUTY_MILD", "0.28")),
++                "front_leg_multiplier": float(os.getenv("GO1_INJURED_MIN_DUTY_FRONT_MULT", "1.10")),
++                "rear_leg_multiplier": float(os.getenv("GO1_INJURED_MIN_DUTY_REAR_MULT", "1.0")),
++                "ema_alpha": float(os.getenv("GO1_INJURED_NONUSE_EMA_ALPHA", "0.995")),
++                "ramp_duration_steps": int(os.getenv("GO1_INJURED_NONUSE_RAMP_STEPS", "8000")),
++            },
++        )
++
++        self.rewards.injured_limb_load_duty_overuse = RewTerm(
++            func=mdp.penalize_injured_limb_load_duty_overuse,
++            weight=float(os.getenv("GO1_INJURED_DUTY_OVERUSE_WEIGHT", "0.0")),
++            params={
++                "sensor_name": "contact_forces",
++                "load_contact_threshold": float(os.getenv("GO1_LOAD_CONTACT_THRESHOLD_N", "10.0")),
++                "severe_splint_length": splint_min,
++                "mild_splint_length": splint_max,
++                "max_duty_severe": float(os.getenv("GO1_INJURED_MAX_DUTY_SEVERE", "0.30")),
++                "max_duty_mild": float(os.getenv("GO1_INJURED_MAX_DUTY_MILD", "0.50")),
++                "front_leg_multiplier": float(os.getenv("GO1_INJURED_MAX_DUTY_FRONT_MULT", "0.95")),
++                "rear_leg_multiplier": float(os.getenv("GO1_INJURED_MAX_DUTY_REAR_MULT", "1.0")),
++                "ramp_duration_steps": int(os.getenv("GO1_INJURED_OVERUSE_RAMP_STEPS", "8000")),
++            },
++        )
++
++        self.rewards.injured_limb_light_drag = RewTerm(
++            func=mdp.penalize_injured_limb_light_drag,
++            weight=float(os.getenv("GO1_INJURED_LIGHT_DRAG_WEIGHT", "0.0")),
++            params={
++                "sensor_name": "contact_forces",
++                "contact_threshold": float(os.getenv("GO1_PAIN_CONTACT_THRESHOLD_N", "1.0")),
++                "load_contact_threshold": float(os.getenv("GO1_LOAD_CONTACT_THRESHOLD_N", "10.0")),
++                "ramp_duration_steps": int(os.getenv("GO1_INJURED_NONUSE_RAMP_STEPS", "8000")),
++            },
++        )
++
++        # 생존 보상 — 오래 생존할수록 더 많은 보상 → 넘어짐 회피 강화
++        self.rewards.survival_bonus = RewTerm(
++            func=mdp_base.is_alive,
++            weight=float(os.getenv("GO1_SURVIVAL_BONUS_WEIGHT", "1.5")),
++        )
++
++        # =================================================================
++        # 7. Phase 2/3 전용: 소폭 보상 조정 (warmstart 호환성 유지)
++        # =================================================================
++        # 에너지 페널티를 50%만 완화하여 절뚝임을 위한 에너지 예산을 소폭 확보
++        if hasattr(self.rewards, "track_lin_vel_xy_exp"):
++            self.rewards.track_lin_vel_xy_exp.weight = float(os.getenv("GO1_TRACK_LIN_VEL_WEIGHT", "2.5"))
++        if hasattr(self.rewards, "dof_torques_l2"):
++            self.rewards.dof_torques_l2.weight *= float(os.getenv("GO1_TORQUE_PENALTY_SCALE", "0.5"))
++        if hasattr(self.rewards, "dof_acc_l2"):
++            self.rewards.dof_acc_l2.weight *= float(os.getenv("GO1_DOF_ACC_PENALTY_SCALE", "0.5"))
++        if hasattr(self.rewards, "action_rate_l2"):
++            self.rewards.action_rate_l2.weight *= float(os.getenv("GO1_ACTION_RATE_PENALTY_SCALE", "0.5"))
+diff --git a/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/__init__.py b/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/__init__.py
+old mode 100644
+new mode 100755
+index 6b43c27..1be29cd
+--- a/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/__init__.py
++++ b/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/__init__.py
+@@ -7,4 +7,8 @@
+ 
+ from isaaclab.envs.mdp import *  # noqa: F401, F403
+ 
++from . import events  # noqa: F401, F403
++from .events import enforce_peg_leg_constraints  # noqa: F401
++from .events import peg_leg_curriculum  # noqa: F401
++from .observations import *  # noqa: F401, F403
+ from .rewards import *  # noqa: F401, F403
+diff --git a/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/rewards.py b/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/rewards.py
+index ceb3956..a3a1060 100644
+--- a/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/rewards.py
++++ b/source/go1_lab/go1_lab/tasks/manager_based/go1_lab/mdp/rewards.py
+@@ -1,8 +1,10 @@
+-# Copyright (c) 2022-2025, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
++# Copyright (c) 2022-2025, The Isaac Lab Project Developers.
+ # All rights reserved.
+ #
+ # SPDX-License-Identifier: BSD-3-Clause
+ 
++"""Common reward terms for the Go1 Lab environment."""
++
+ from __future__ import annotations
+ 
+ import torch
+@@ -10,17 +12,1153 @@ from typing import TYPE_CHECKING
+ 
+ from isaaclab.assets import Articulation
+ from isaaclab.managers import SceneEntityCfg
+-from isaaclab.utils.math import wrap_to_pi
+ 
+ if TYPE_CHECKING:
+     from isaaclab.envs import ManagerBasedRLEnv
+ 
+ 
+-def joint_pos_target_l2(env: ManagerBasedRLEnv, target: float, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+-    """Penalize joint position deviation from a target value."""
+-    # extract the used quantities (to enable type-hinting)
+-    asset: Articulation = env.scene[asset_cfg.name]
+-    # wrap the joint positions to (-pi, pi)
+-    joint_pos = wrap_to_pi(asset.data.joint_pos[:, asset_cfg.joint_ids])
+-    # compute the reward
+-    return torch.sum(torch.square(joint_pos - target), dim=1)
++def _peg_leg_index_per_env(env: "ManagerBasedRLEnv") -> torch.Tensor:
++    """각 env의 고장 다리 인덱스(-1, 0..3)를 반환합니다.
++
++    ⚠️ 중요: Phase1 healthy 학습에서는 `randomize_peg_leg_actuation` 이벤트가 등록되지
++    않아 `env._peg_leg_index` 버퍼가 생성되지 않습니다. 과거의 `env_id % 5` fallback은
++    80% env 를 부상 처리하여 `reward_trot_synchronization` 등 정상 env 전용 보상을
++    대부분의 env에서 꺼버리는 심각한 버그를 유발했습니다.
++
++    새 fallback: 버퍼가 없으면 "모두 정상(-1)" 으로 간주합니다. Phase2/3 에서는 reset
++    이벤트가 버퍼를 생성·갱신하므로 이 경로는 healthy 에서만 쓰입니다.
++    """
++    if hasattr(env, "_peg_leg_index"):
++        return env._peg_leg_index.to(device=env.device, dtype=torch.long)
++    return torch.full((env.num_envs,), -1, device=env.device, dtype=torch.long)
++
++
++def _step_ramp(env: "ManagerBasedRLEnv", ramp_start_steps: int = 0, ramp_duration_steps: int = 1) -> float:
++    """현재 common_step_counter 기준 선형 ramp 계수 [0, 1]."""
++    step = float(getattr(env, "common_step_counter", 0))
++    start = float(ramp_start_steps)
++    duration = max(float(ramp_duration_steps), 1.0)
++    return float(max(0.0, min(1.0, (step - start) / duration)))
++
++
++def _foot_force_tensor(env: "ManagerBasedRLEnv", sensor_name: str, use_z_only: bool) -> tuple[torch.Tensor, list[int | None]]:
++    """발 링크별 접촉력을 반환합니다. shape: (num_envs, 4)."""
++    try:
++        contact_sensor = env.scene[sensor_name]
++    except Exception:
++        return torch.zeros((env.num_envs, 4), device=env.device), [None, None, None, None]
++
++    contact_forces_data = contact_sensor.data.net_forces_w
++    if contact_forces_data is None:
++        return torch.zeros((env.num_envs, 4), device=env.device), [None, None, None, None]
++
++    foot_names = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
++    sensor_body_names = contact_sensor.body_names
++    foot_indices: list[int | None] = []
++
++    def find_body_idx(name: str) -> int | None:
++        for idx, body_name in enumerate(sensor_body_names):
++            if body_name == name or (name in body_name):
++                return idx
++        return None
++
++    for foot_name in foot_names:
++        foot_idx = find_body_idx(foot_name)
++        if foot_idx is None:
++            for alt_name in [
++                foot_name.replace("_foot", "_foot_link"),
++                foot_name.replace("_foot", "_foot_link_0"),
++                foot_name.lower(),
++            ]:
++                foot_idx = find_body_idx(alt_name)
++                if foot_idx is not None:
++                    break
++        foot_indices.append(foot_idx)
++
++    out = torch.zeros((env.num_envs, 4), device=env.device)
++    for i, foot_idx in enumerate(foot_indices):
++        if foot_idx is None or foot_idx >= contact_forces_data.shape[1]:
++            continue
++        forces = contact_forces_data[:, foot_idx]
++        out[:, i] = torch.abs(forces[:, 2]) if use_z_only else torch.norm(forces, dim=1)
++    return out, foot_indices
++
++
++def _foot_force_ema(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str,
++    use_z_only: bool,
++    ema_alpha: float,
++) -> torch.Tensor:
++    """발 접촉력의 per-env EMA를 반환합니다.
++
++    Trot은 좌우 다리가 같은 순간에 같은 힘을 내는 보행이 아닙니다. 좌우 force 대칭은
++    instantaneous force가 아니라 시간 평균 기준으로 평가해야 하므로 EMA를 사용합니다.
++    """
++    step = int(getattr(env, "common_step_counter", 0))
++    cached_step = getattr(env, "_go1_foot_force_ema_step", None)
++    cached_alpha = getattr(env, "_go1_foot_force_ema_alpha", None)
++    cached_use_z = getattr(env, "_go1_foot_force_ema_use_z_only", None)
++    cached_sensor = getattr(env, "_go1_foot_force_ema_sensor_name", None)
++    cached_ema = getattr(env, "_go1_foot_force_ema", None)
++    if (
++        cached_ema is not None
++        and cached_step == step
++        and cached_alpha == float(ema_alpha)
++        and cached_use_z == bool(use_z_only)
++        and cached_sensor == sensor_name
++    ):
++        return cached_ema
++
++    contact_by_foot, _ = _foot_force_tensor(env, sensor_name=sensor_name, use_z_only=use_z_only)
++    alpha = float(max(0.0, min(0.9999, ema_alpha)))
++
++    ema = getattr(env, "_go1_foot_force_ema", None)
++    if ema is None or ema.shape != contact_by_foot.shape:
++        ema = contact_by_foot.detach().clone()
++    else:
++        reset_buf = getattr(env, "reset_buf", None)
++        if reset_buf is not None:
++            reset_mask = reset_buf.to(device=env.device, dtype=torch.bool)
++            if reset_mask.shape[0] == ema.shape[0] and reset_mask.any():
++                ema[reset_mask] = contact_by_foot.detach()[reset_mask]
++        ema.mul_(alpha).add_(contact_by_foot.detach(), alpha=1.0 - alpha)
++
++    env._go1_foot_force_ema = ema
++    env._go1_foot_force_ema_step = step
++    env._go1_foot_force_ema_alpha = float(ema_alpha)
++    env._go1_foot_force_ema_use_z_only = bool(use_z_only)
++    env._go1_foot_force_ema_sensor_name = sensor_name
++    return ema
++
++
++def _link_force_tensor(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str,
++    link_name_candidates: list[str],
++    use_z_only: bool,
++) -> tuple[torch.Tensor, list[int | None]]:
++    """지정 링크 후보군의 접촉력을 반환합니다. shape: (num_envs, num_links)."""
++    try:
++        contact_sensor = env.scene[sensor_name]
++    except Exception:
++        return torch.zeros((env.num_envs, len(link_name_candidates)), device=env.device), [None] * len(link_name_candidates)
++
++    contact_forces_data = contact_sensor.data.net_forces_w
++    if contact_forces_data is None:
++        return torch.zeros((env.num_envs, len(link_name_candidates)), device=env.device), [None] * len(link_name_candidates)
++
++    sensor_body_names = contact_sensor.body_names
++
++    def find_body_idx(name: str) -> int | None:
++        lowered = name.lower()
++        for idx, body_name in enumerate(sensor_body_names):
++            body_name_l = body_name.lower()
++            if body_name_l == lowered or (lowered in body_name_l):
++                return idx
++        return None
++
++    indices: list[int | None] = [find_body_idx(name) for name in link_name_candidates]
++    out = torch.zeros((env.num_envs, len(link_name_candidates)), device=env.device)
++    for i, body_idx in enumerate(indices):
++        if body_idx is None or body_idx >= contact_forces_data.shape[1]:
++            continue
++        forces = contact_forces_data[:, body_idx]
++        out[:, i] = torch.abs(forces[:, 2]) if use_z_only else torch.norm(forces, dim=1)
++    return out, indices
++
++
++def penalize_peg_leg_contact(
++    env: "ManagerBasedRLEnv",
++    asset_cfg: SceneEntityCfg,
++    sensor_name: str = "contact_forces",
++    force_threshold: float = 0.0,
++    max_overload: float = 120.0,
++    use_z_only: bool = False,
++) -> torch.Tensor:
++    """
++    의족 다리에 접촉력이 가해지는 것을 패널티로 처리합니다.
++    
++    환경 ID를 기준으로 의족 다리를 식별합니다:
++    - 0: 정상
++    - 1: FL 의족 (idx 0)
++    - 2: FR 의족 (idx 1)
++    - 3: RL 의족 (idx 2)
++    - 4: RR 의족 (idx 3)
++    
++    Args:
++        env: ManagerBasedRLEnv 인스턴스
++        asset_cfg: 로봇 자산 설정
++        sensor_name: ContactSensor 이름 (기본: contact_forces)
++        force_threshold: 이 값 이하의 힘은 패널티를 주지 않습니다. (N 단위)
++        use_z_only: True면 z성분(|Fz|)만 사용(근사 GRF), False면 벡터 노름(||F||) 사용
++        
++    Returns:
++        의족 다리 접촉력에 대한 패널티 (접촉력이 클수록 큰 패널티)
++    """
++    contact_by_foot, _ = _foot_force_tensor(env, sensor_name=sensor_name, use_z_only=use_z_only)
++    peg_leg_idx = _peg_leg_index_per_env(env)
++    _ = asset_cfg
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    for leg in range(4):
++        mask = peg_leg_idx == leg
++        if mask.any():
++            overload = torch.clamp(contact_by_foot[mask, leg] - float(force_threshold), min=0.0)
++            penalty[mask] = torch.clamp(overload, max=float(max_overload))
++    return penalty
++
++
++def penalize_knee_shin_contact(
++    env: "ManagerBasedRLEnv",
++    asset_cfg: SceneEntityCfg,
++    sensor_name: str = "contact_forces",
++    force_threshold: float = 5.0,
++    max_overload: float = 160.0,
++    use_z_only: bool = True,
++) -> torch.Tensor:
++    """calf(무릎/정강이) 접촉을 패널티로 처리해 무릎 보행을 억제합니다."""
++    _ = asset_cfg
++    calf_names = ["FL_calf", "FR_calf", "RL_calf", "RR_calf"]
++    contact_by_calf, _ = _link_force_tensor(
++        env,
++        sensor_name=sensor_name,
++        link_name_candidates=calf_names,
++        use_z_only=use_z_only,
++    )
++    overload = torch.clamp(contact_by_calf - float(force_threshold), min=0.0)
++    penalty = torch.sum(torch.clamp(overload, max=float(max_overload)), dim=1)
++    return penalty
++
++
++def penalize_peg_leg_torque(
++    env: "ManagerBasedRLEnv",
++    asset_cfg: SceneEntityCfg,
++) -> torch.Tensor:
++    """
++    의족 다리의 관절 토크 사용을 패널티로 처리합니다.
++    
++    의족은 능동적인 힘을 낼 수 없거나(stiffness=0), 힘을 내더라도 에너지를 아껴야 합니다.
++    해당 다리의 관절(Hip, Thigh, Calf)에서 발생하는 토크의 제곱합을 패널티로 줍니다.
++    
++    Args:
++        env: ManagerBasedRLEnv 인스턴스
++        asset_cfg: 로봇 자산 설정 (robot)
++        
++    Returns:
++        의족 다리 토크 패널티 (토크가 클수록 큰 패널티)
++    """
++    # 로봇 자산 가져오기
++    robot: Articulation = env.scene[asset_cfg.name]
++    
++    # 관절 토크 가져오기: (num_envs, num_joints)
++    # Go1 관절 순서: [FL_hip, FL_thigh, FL_calf, FR_hip, ..., RL_..., RR_...]
++    # 각 다리는 3개의 관절을 가짐
++    torques = torch.square(robot.data.applied_torque)
++    
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    
++    peg_leg_idx = _peg_leg_index_per_env(env)
++    
++    # 각 다리별 관절 인덱스 (Go1 기준)
++    # FL: 0, 1, 2
++    # FR: 3, 4, 5
++    # RL: 6, 7, 8
++    # RR: 9, 10, 11
++    
++    for i in range(4): # 0:FL, 1:FR, 2:RL, 3:RR
++        peg_mask = peg_leg_idx == i
++        if peg_mask.any():
++            # 해당 다리의 관절 인덱스 (3개)
++            joint_indices = slice(i * 3, (i + 1) * 3)
++            
++            # 해당 다리의 토크 합산 (L2 norm squared)
++            leg_torques = torch.sum(torques[peg_mask, joint_indices], dim=1)
++            penalty[peg_mask] += leg_torques
++            
++    return penalty
++
++
++def reward_peg_leg_foot_clearance(
++    env: "ManagerBasedRLEnv",
++    asset_cfg: SceneEntityCfg,
++    target_height: float = 0.1,
++) -> torch.Tensor:
++    """
++    의족 다리를 지면에서 일정 높이 이상 들어 올리면 보상을 줍니다.
++    
++    통증 패널티를 피하기 위해 다리를 들어야 한다는 것을 로봇에게 가이드(Shaping Reward)합니다.
++    의족 다리의 발 높이가 target_height보다 높을수록 보상이 커집니다.
++    
++    Args:
++        env: ManagerBasedRLEnv 인스턴스
++        asset_cfg: 로봇 자산 설정
++        target_height: 목표 높이 (m). 이보다 낮으면 보상이 적거나 0임.
++        
++    Returns:
++        의족 다리 높이 보상
++    """
++    # 로봇 자산 가져오기
++    robot: Articulation = env.scene[asset_cfg.name]
++    
++    # 발 위치 가져오기 (World Frame)
++    # Go1의 발 body 인덱스를 알아야 함.
++    # 여기서는 고정된 인덱스 또는 body 이름 검색 사용
++    # body_names: ['trunk', 'FL_hip', 'FL_thigh', 'FL_calf', 'FL_foot', ...]
++    
++    reward = torch.zeros(env.num_envs, device=env.device)
++    
++    peg_leg_idx = _peg_leg_index_per_env(env)
++    
++    # 발 이름 정의 (Go1 기준)
++    foot_names = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
++    
++    for i, foot_name in enumerate(foot_names):
++        peg_mask = peg_leg_idx == i
++        
++        if peg_mask.any():
++            try:
++                # 해당 발의 body 인덱스 찾기
++                body_idx = robot.find_bodies(foot_name)[0][0] # (num_bodies,) 인덱스 반환
++                
++                # 발 위치 (env_idx, body_idx, 3) -> (peg_mask_count, 3)
++                # robot.data.body_pos_w는 (num_envs, num_bodies, 3)
++                foot_pos_z = robot.data.body_pos_w[peg_mask, body_idx, 2]
++                
++                # 지면 높이(0.0) 기준으로 높이 계산
++                # (지형이 평평하지 않다면 지형 높이를 빼야 하지만, 일단 평지 가정)
++                
++                # 목표 높이보다 높으면 보상 (Tanh로 상한선 둠)
++                # 높이가 0이면 0점, target_height면 약 0.76점, 그 이상이면 1.0점에 수렴
++                height_error = foot_pos_z / target_height
++                reward[peg_mask] += torch.tanh(height_error)
++                
++            except Exception:
++                pass
++                
++    return reward
++
++
++def reward_trot_synchronization(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    contact_threshold: float = 1.0,
++    use_z_only: bool = True,
++    command_name: str = "base_velocity",
++    vel_gate_threshold: float = 0.1,
++    vel_gate_sharpness: float = 10.0,
++    ramp_start_steps: int = 0,
++    ramp_duration_steps: int = 1,
++) -> torch.Tensor:
++    """대각선 다리 쌍의 접지 동기화를 보상하여 trot 보행을 유도합니다.
++
++    Trot 패턴: FL+RR 동시 접지/이탈, FR+RL 동시 접지/이탈
++    정상 env에만 적용하고, 부상 env에서는 적응적 리듬 변화를 허용합니다.
++
++    Pronking 방지: 4발이 모두 같은 상태(전부 접지 or 전부 체공)이면 점수 0.
++
++    ⚠️ 속도 명령 게이팅 (v3 → v4): 이 보상이 너무 강하면 로봇이 **제자리에서**만
++    trot 리듬을 타서 터레인 커리큘럼이 0 으로 수렴하는 "trot-in-place" 국소최적이
++    발생합니다. 속도 명령 크기 ||v_cmd|| 가 작을 때는 보상을 서서히 줄여서,
++    "움직이면서 trot" 해야만 보상을 받게 유도합니다:
++
++        gate = tanh(sharpness · max(||v_cmd|| - gate_threshold, 0))
++    """
++    contact_by_foot, _ = _foot_force_tensor(env, sensor_name=sensor_name, use_z_only=use_z_only)
++    peg_leg_idx = _peg_leg_index_per_env(env)
++
++    in_contact = (contact_by_foot > float(contact_threshold)).float()  # (E, 4)
++
++    diag1_sync = 1.0 - torch.abs(in_contact[:, 0] - in_contact[:, 3])  # FL-RR 동기
++    diag2_sync = 1.0 - torch.abs(in_contact[:, 1] - in_contact[:, 2])  # FR-RL 동기
++    anti_lr = torch.abs(in_contact[:, 0] - in_contact[:, 1])  # FL-FR 반위상
++    anti_fb = torch.abs(in_contact[:, 2] - in_contact[:, 3])  # RL-RR 반위상
++
++    trot_score = (diag1_sync + diag2_sync + anti_lr + anti_fb) / 4.0
++
++    # Pronking/bounding 감지: 4발이 모두 같은 상태이면 trot이 아님 → 점수 0
++    all_same = (
++        (in_contact[:, 0] == in_contact[:, 1])
++        & (in_contact[:, 1] == in_contact[:, 2])
++        & (in_contact[:, 2] == in_contact[:, 3])
++    )
++    trot_score[all_same] = 0.0
++
++    # 속도 명령 게이트: 명령 속도가 임계값 이하면 보상 축소 → 제자리 trot 방지
++    try:
++        cmd = env.command_manager.get_command(command_name)  # (E, >=3) [vx, vy, wz, ...]
++        cmd_vxy = torch.linalg.norm(cmd[:, :2], dim=1)  # (E,)
++        gate = torch.tanh(
++            float(vel_gate_sharpness) * torch.clamp(cmd_vxy - float(vel_gate_threshold), min=0.0)
++        )
++        trot_score = trot_score * gate
++    except Exception:
++        # command manager 를 찾지 못하면 게이트 없이 사용 (이전 동작과 호환)
++        pass
++
++    reward = torch.zeros(env.num_envs, device=env.device)
++    is_normal = peg_leg_idx < 0
++    reward[is_normal] = trot_score[is_normal] * _step_ramp(env, ramp_start_steps, ramp_duration_steps)
++    return reward
++
++
++def penalize_contact_force_asymmetry(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    use_z_only: bool = True,
++    ema_alpha: float = 0.995,
++    ramp_start_steps: int = 0,
++    ramp_duration_steps: int = 1,
++) -> torch.Tensor:
++    """좌우 다리 쌍(FL-FR, RL-RR)의 시간평균 접촉력 비대칭을 패널티로 부여합니다.
++
++    정상 보행에서도 좌우 대칭 보행을 유도하고,
++    부상 시에는 건측-환측 하중 차이가 자연스러우므로 부상 env는 제외합니다.
++    """
++    contact_by_foot = _foot_force_ema(env, sensor_name=sensor_name, use_z_only=use_z_only, ema_alpha=ema_alpha)
++    peg_leg_idx = _peg_leg_index_per_env(env)
++    is_normal = peg_leg_idx < 0
++
++    diff_front = torch.abs(contact_by_foot[:, 0] - contact_by_foot[:, 1])
++    diff_rear = torch.abs(contact_by_foot[:, 2] - contact_by_foot[:, 3])
++    asym = diff_front + diff_rear
++
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    penalty[is_normal] = asym[is_normal] * _step_ramp(env, ramp_start_steps, ramp_duration_steps)
++    return penalty
++
++
++def penalize_duty_factor_asymmetry(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    contact_threshold: float = 1.0,
++    use_z_only: bool = True,
++    ema_alpha: float = 0.995,
++    ramp_start_steps: int = 0,
++    ramp_duration_steps: int = 1,
++) -> torch.Tensor:
++    """좌우 다리 쌍(FL-FR, RL-RR)의 시간평균 접지율 비대칭을 패널티로 부여합니다.
++
++    Phase 1 healthy baseline의 목표는 특정 gait pattern 처방이 아니라
++    같은 축의 좌우 다리가 비슷한 duty factor를 갖는 것입니다.
++    """
++    contact_by_foot, _ = _foot_force_tensor(env, sensor_name=sensor_name, use_z_only=use_z_only)
++    in_contact = (contact_by_foot > float(contact_threshold)).float()
++    alpha = float(max(0.0, min(0.9999, ema_alpha)))
++
++    ema = getattr(env, "_go1_foot_contact_ema", None)
++    if ema is None or ema.shape != in_contact.shape:
++        ema = in_contact.detach().clone()
++    else:
++        reset_buf = getattr(env, "reset_buf", None)
++        if reset_buf is not None:
++            reset_mask = reset_buf.to(device=env.device, dtype=torch.bool)
++            if reset_mask.shape[0] == ema.shape[0] and reset_mask.any():
++                ema[reset_mask] = in_contact.detach()[reset_mask]
++        ema.mul_(alpha).add_(in_contact.detach(), alpha=1.0 - alpha)
++
++    env._go1_foot_contact_ema = ema
++
++    peg_leg_idx = _peg_leg_index_per_env(env)
++    is_normal = peg_leg_idx < 0
++
++    diff_front = torch.abs(ema[:, 0] - ema[:, 1])
++    diff_rear = torch.abs(ema[:, 2] - ema[:, 3])
++    asym = diff_front + diff_rear
++
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    penalty[is_normal] = asym[is_normal] * _step_ramp(env, ramp_start_steps, ramp_duration_steps)
++    return penalty
++
++
++def penalize_front_rear_load_imbalance(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    min_rear_to_front_ratio: float = 0.45,
++    use_z_only: bool = True,
++    ema_alpha: float = 0.995,
++    ramp_start_steps: int = 0,
++    ramp_duration_steps: int = 1,
++) -> torch.Tensor:
++    """앞다리만 쓰는 전방 크롤링/엎드림 해를 억제합니다.
++
++    앞쪽 CoM이면 front load > rear load는 자연스럽습니다. 하지만 rear load가 front load에
++    비해 거의 0에 가까워지면 정상 보행이 아니라 앞다리만 끌고 가는 실패 모드입니다.
++
++    정상 env에만 적용하고, peg-leg env에서는 자연스러운 하중 재분배를 허용합니다.
++    """
++    contact_by_foot = _foot_force_ema(env, sensor_name=sensor_name, use_z_only=use_z_only, ema_alpha=ema_alpha)
++    peg_leg_idx = _peg_leg_index_per_env(env)
++    is_normal = peg_leg_idx < 0
++
++    front_load = contact_by_foot[:, 0] + contact_by_foot[:, 1]
++    rear_load = contact_by_foot[:, 2] + contact_by_foot[:, 3]
++    missing_rear_load = torch.clamp(float(min_rear_to_front_ratio) * front_load - rear_load, min=0.0)
++
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    penalty[is_normal] = missing_rear_load[is_normal] * _step_ramp(env, ramp_start_steps, ramp_duration_steps)
++    return penalty
++
++
++def penalize_front_rear_load_distribution(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    target_front_fraction: float = 0.60,
++    tolerance: float = 0.03,
++    use_z_only: bool = True,
++    ema_alpha: float = 0.995,
++    ramp_start_steps: int = 0,
++    ramp_duration_steps: int = 1,
++) -> torch.Tensor:
++    """정상 보행에서 앞/뒤 하중 비율을 목표값으로 유도합니다.
++
++    실제 사족 보행 동물은 정적 하중이 앞쪽으로 치우치는 경향이 있으므로,
++    좌우는 대칭으로 두되 front pair 전체 하중이 전체의 일정 비율이 되도록 맞춥니다.
++    기본 목표는 front 60%, rear 40%입니다.
++    """
++    contact_by_foot = _foot_force_ema(env, sensor_name=sensor_name, use_z_only=use_z_only, ema_alpha=ema_alpha)
++    peg_leg_idx = _peg_leg_index_per_env(env)
++    is_normal = peg_leg_idx < 0
++
++    front_load = contact_by_foot[:, 0] + contact_by_foot[:, 1]
++    rear_load = contact_by_foot[:, 2] + contact_by_foot[:, 3]
++    total_load = torch.clamp(front_load + rear_load, min=1.0)
++
++    front_fraction = front_load / total_load
++    fraction_error = torch.clamp(
++        torch.abs(front_fraction - float(target_front_fraction)) - float(tolerance),
++        min=0.0,
++    )
++
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    penalty[is_normal] = fraction_error[is_normal] * total_load[is_normal] * _step_ramp(
++        env, ramp_start_steps, ramp_duration_steps
++    )
++    return penalty
++
++
++def penalize_diagonal_load_asymmetry(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    use_z_only: bool = True,
++    ema_alpha: float = 0.995,
++    ramp_start_steps: int = 0,
++    ramp_duration_steps: int = 1,
++) -> torch.Tensor:
++    """트롯 대각쌍 간 시간평균 하중 불균형을 패널티로 부여합니다.
++
++    Trot 보행의 대각쌍:
++      - diag1 = FL + RR
++      - diag2 = FR + RL
++
++    정책이 한쪽 대각쌍에만 체중을 싣는 "lopsided trot" 을 방지하기 위해
++    (diag1 - diag2) 의 절대값을 페널티로 더합니다.
++
++    contact_force_symmetry 는 좌우(FL-FR, RL-RR) 만 제약하기 때문에,
++    대각 편향(FL+RR vs FR+RL) 은 별도로 패널티해야 정책이 수렴 시 균형 트롯으로 가집니다.
++
++    부상 env 에서는 자연스러운 환측-건측 비대칭이므로 제외합니다.
++    """
++    contact_by_foot = _foot_force_ema(env, sensor_name=sensor_name, use_z_only=use_z_only, ema_alpha=ema_alpha)
++    peg_leg_idx = _peg_leg_index_per_env(env)
++    is_normal = peg_leg_idx < 0
++
++    diag1 = contact_by_foot[:, 0] + contact_by_foot[:, 3]  # FL + RR
++    diag2 = contact_by_foot[:, 1] + contact_by_foot[:, 2]  # FR + RL
++    asym = torch.abs(diag1 - diag2)
++
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    penalty[is_normal] = asym[is_normal] * _step_ramp(env, ramp_start_steps, ramp_duration_steps)
++    return penalty
++
++
++def penalize_duty_factor_deviation(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    contact_threshold: float = 1.0,
++    target_contact_count: float = 2.0,
++    use_z_only: bool = True,
++) -> torch.Tensor:
++    """Trot 의 "동시에 두 다리만 접지" 특성을 per-step 페널티로 유도합니다.
++
++    매 timestep 의 접지 합(sum of in_contact_i)이 `target_contact_count` (기본 2) 에서
++    얼마나 벗어났는지를 페널티로 반환합니다.
++
++    - 4발 접지(stand)  → |4 - 2| = 2
++    - 3발 접지         → |3 - 2| = 1
++    - 2발 접지 (trot) → |2 - 2| = 0  ✓
++    - 1발 접지         → |1 - 2| = 1
++    - 공중(pronk)      → |0 - 2| = 2
++
++    이전 구현(leg 별 |0/1 - 0.5| 합)은 수학적으로 상수 2.0 이라 학습 신호가 전혀 없었습니다.
++    새 구현은 "2-legs stance" 를 능동적으로 유도합니다. `reward_trot_synchronization` 은
++    어느 대각쌍이 접지하는지를 결정해주고, 이 항은 "몇 개가 동시 접지" 인지를 결정합니다.
++    """
++    contact_by_foot, _ = _foot_force_tensor(env, sensor_name=sensor_name, use_z_only=use_z_only)
++    peg_leg_idx = _peg_leg_index_per_env(env)
++    is_normal = peg_leg_idx < 0
++
++    in_contact = (contact_by_foot > float(contact_threshold)).float()  # (E, 4)
++    total_contact = in_contact.sum(dim=1)  # (E,)
++    dev = torch.abs(total_contact - float(target_contact_count))  # (E,)
++
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    penalty[is_normal] = dev[is_normal]
++    return penalty
++
++
++def penalize_leg_duty_factor_targets(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    contact_threshold: float = 1.0,
++    target_duty: tuple[float, float, float, float] = (0.55, 0.55, 0.50, 0.50),
++    tolerance: float = 0.03,
++    use_z_only: bool = True,
++    ema_alpha: float = 0.995,
++    ramp_start_steps: int = 0,
++    ramp_duration_steps: int = 1,
++) -> torch.Tensor:
++    """정상 보행의 다리별 duty factor를 목표 범위로 유도합니다.
++
++    기존 `penalize_duty_factor_asymmetry` 는 좌우 차이만 줄입니다. 따라서
++    FL/FR 이 둘 다 과도하게 오래 접지하는 front-heavy gait는 남을 수 있습니다.
++    이 항은 각 다리의 시간평균 duty가 목표값 주변에 머물도록 하여,
++    force symmetry는 유지하면서 front duty over-stance를 줄이는 데 사용합니다.
++    """
++    contact_by_foot, _ = _foot_force_tensor(env, sensor_name=sensor_name, use_z_only=use_z_only)
++    in_contact = (contact_by_foot > float(contact_threshold)).float()
++    alpha = float(max(0.0, min(0.9999, ema_alpha)))
++
++    ema = getattr(env, "_go1_foot_contact_target_ema", None)
++    if ema is None or ema.shape != in_contact.shape:
++        ema = in_contact.detach().clone()
++    else:
++        reset_buf = getattr(env, "reset_buf", None)
++        if reset_buf is not None:
++            reset_mask = reset_buf.to(device=env.device, dtype=torch.bool)
++            if reset_mask.shape[0] == ema.shape[0] and reset_mask.any():
++                ema[reset_mask] = in_contact.detach()[reset_mask]
++        ema.mul_(alpha).add_(in_contact.detach(), alpha=1.0 - alpha)
++
++    env._go1_foot_contact_target_ema = ema
++
++    target = torch.tensor(target_duty, device=env.device, dtype=ema.dtype).view(1, 4)
++    dev = torch.clamp(torch.abs(ema - target) - float(tolerance), min=0.0).sum(dim=1)
++
++    peg_leg_idx = _peg_leg_index_per_env(env)
++    is_normal = peg_leg_idx < 0
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    penalty[is_normal] = dev[is_normal] * _step_ramp(env, ramp_start_steps, ramp_duration_steps)
++    return penalty
++
++
++def penalize_injured_leg_stance_ratio(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    contact_threshold: float = 1.0,
++    use_z_only: bool = True,
++) -> torch.Tensor:
++    """부상 다리가 접지 중(duty)이면 패널티를 주어 duty factor를 낮춥니다.
++
++    매 스텝 부상 다리의 접지 여부를 0/1로 판단하고,
++    접지 중이면 패널티를 부여하여 부상 다리를 빨리 들어 올리도록 유도합니다.
++    """
++    contact_by_foot, _ = _foot_force_tensor(env, sensor_name=sensor_name, use_z_only=use_z_only)
++    peg_leg_idx = _peg_leg_index_per_env(env)
++
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    for leg in range(4):
++        mask = peg_leg_idx == leg
++        if mask.any():
++            in_contact = (contact_by_foot[mask, leg] > float(contact_threshold)).float()
++            penalty[mask] = in_contact
++    return penalty
++
++
++def penalty_pain(
++    env: "ManagerBasedRLEnv",
++    asset_cfg: SceneEntityCfg,
++    sensor_name: str = "contact_forces",
++    failure_force_threshold: float = 60.0,
++    pain_scale: float = 0.08,
++    overload_tolerance: float = 0.0,
++    max_exp_argument: float = 8.0,
++    max_penalty: float = 200.0,
++    base_contact_cost: float = 0.0,
++    contact_detect_threshold: float = 1.0,
++    load_contact_cost: float = 0.0,
++    load_contact_threshold: float = 10.0,
++    load_contact_cost_severe_multiplier: float = 1.20,
++    load_contact_cost_mild_multiplier: float = 0.80,
++    base_contact_cost_severe_multiplier: float = 1.0,
++    base_contact_cost_mild_multiplier: float = 1.0,
++    include_calf: bool = True,
++    severity_scaled: bool = False,
++    severe_splint_length: float = 0.20,
++    mild_splint_length: float = 0.30,
++    threshold_severe_multiplier: float = 0.80,
++    threshold_mild_multiplier: float = 1.15,
++    scale_severe_multiplier: float = 1.25,
++    scale_mild_multiplier: float = 0.85,
++) -> torch.Tensor:
++    """Nociceptor-inspired pain penalty — implements paper equation (4).
++
++    Paper formulation (Section 4.4):
++        Cpain(Fz) = Pbase × 1[contact] + max(0, exp(α(Fz − Fth)) − 1)
++
++    where
++        Pbase  = base_contact_cost         (paper default 0.05)
++        Fth    = failure_force_threshold   (paper default 10.0 N)
++        α      = pain_scale                (paper default 2.0)
++
++    Biological accuracy:
++        • Sub-threshold (Fz < Fth): only Pbase penalty per contact step.
++          Mirrors the low-level baseline firing of biological nociceptors
++          during non-damaging mechanical contact.
++        • Supra-threshold (Fz > Fth): exponential penalty that becomes
++          rapidly intolerable. Mirrors the A-δ and C-fibre burst firing
++          triggered by tissue-damaging loads — the same mechanism that
++          drives antalgic gait in injured animals.
++        • The gradient dCpain/dFz = α·exp(α(Fz−Fth)) is continuous and
++          zero at threshold, removing the discontinuity of a hard barrier.
++
++    Severity scaling (when severity_scaled=True):
++        Shorter/more-damaged splints receive a lower Fth and higher α,
++        reflecting the biological observation that injured tissue has a
++        reduced mechanical pain threshold (peripheral sensitisation).
++        base_contact_cost is also severity-scaled so that severe splints
++        carry higher baseline contact cost, creating the severity trend
++        required by the paper's biomechanical comparison protocol.
++
++    Normal-gait symmetry and mirror injury symmetry:
++        This function applies only to the designated injured leg.
++        Because FL/FR are treated with identical parameter values,
++        the injury response is automatically mirror-symmetric, provided
++        the healthy baseline gait (Phase 1) has no left-right bias.
++
++    Leg force aggregation:
++        leg_force = |Fz(foot)| [+ |Fz(calf)| if include_calf]
++        Including calf naturally prevents knee-walking exploits.
++
++    Args:
++        failure_force_threshold: Fth — pain onset threshold (N).
++            Below this value only Pbase applies (sub-threshold).
++        pain_scale: α — exponential steepness above threshold.
++            Higher values create a sharper nociceptor-like response.
++        base_contact_cost: Pbase — per-contact-step baseline penalty.
++            Discourages persistent stance at sub-threshold force.
++        base_contact_cost_severe/mild_multiplier: severity scaling of
++            Pbase. Severe splints carry higher contact cost, driving
++            the severity trend in force reduction.
++        load_contact_cost: optional additional cost per step when
++            Fz > load_contact_threshold. Set to 0 for paper-faithful
++            implementation (not in paper equation 4).
++        include_calf: if True, add calf contact force to leg_force
++            to prevent the knee-walking exploit.
++    """
++    _ = asset_cfg
++    contact_by_foot, _ = _foot_force_tensor(env, sensor_name=sensor_name, use_z_only=True)
++    if include_calf:
++        calf_names = ["FL_calf", "FR_calf", "RL_calf", "RR_calf"]
++        contact_by_calf, _ = _link_force_tensor(
++            env,
++            sensor_name=sensor_name,
++            link_name_candidates=calf_names,
++            use_z_only=True,
++        )
++    else:
++        contact_by_calf = torch.zeros_like(contact_by_foot)
++
++    peg_leg_idx = _peg_leg_index_per_env(env)
++
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    threshold = float(failure_force_threshold)
++    scale = float(pain_scale)
++    base_cost = float(base_contact_cost)
++    detect_th = float(contact_detect_threshold)
++    load_cost = float(load_contact_cost)
++    load_th = float(load_contact_threshold)
++    severity_alpha = None
++    if severity_scaled:
++        severity_alpha = _splint_severity_alpha(
++            env,
++            severe_splint_length=severe_splint_length,
++            mild_splint_length=mild_splint_length,
++        )
++
++    for leg in range(4):
++        mask = peg_leg_idx == leg
++        if not mask.any():
++            continue
++        leg_force = contact_by_foot[mask, leg] + contact_by_calf[mask, leg]
++        threshold_t = threshold
++        scale_t = scale
++        load_cost_t = load_cost
++        base_cost_t: float | torch.Tensor = base_cost
++        if severity_alpha is not None:
++            alpha = severity_alpha[mask]
++            threshold_mult = float(threshold_severe_multiplier) + (
++                float(threshold_mild_multiplier) - float(threshold_severe_multiplier)
++            ) * alpha
++            scale_mult = float(scale_severe_multiplier) + (
++                float(scale_mild_multiplier) - float(scale_severe_multiplier)
++            ) * alpha
++            load_cost_mult = float(load_contact_cost_severe_multiplier) + (
++                float(load_contact_cost_mild_multiplier)
++                - float(load_contact_cost_severe_multiplier)
++            ) * alpha
++            base_cost_mult = float(base_contact_cost_severe_multiplier) + (
++                float(base_contact_cost_mild_multiplier)
++                - float(base_contact_cost_severe_multiplier)
++            ) * alpha
++            threshold_t = threshold * threshold_mult
++            scale_t = scale * scale_mult
++            load_cost_t = load_cost * load_cost_mult
++            base_cost_t = base_cost * base_cost_mult
++
++        if base_cost > 0.0:
++            is_contact = (leg_force > detect_th).float()
++            penalty[mask] += base_cost_t * is_contact
++        if load_cost > 0.0:
++            is_load_contact = (leg_force > load_th).float()
++            penalty[mask] += load_cost_t * is_load_contact
++
++        overload = torch.clamp(leg_force - threshold_t - float(overload_tolerance), min=0.0)
++        exp_arg = torch.clamp(scale_t * overload, min=0.0, max=float(max_exp_argument))
++        penalty[mask] += torch.clamp(torch.expm1(exp_arg), max=float(max_penalty))
++
++    return penalty
++
++
++def penalize_intact_limb_overload(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    overload_threshold: float = 65.0,
++    overload_scale: float = 1.0,
++    max_penalty: float = 120.0,
++    use_z_only: bool = True,
++) -> torch.Tensor:
++    """부상 환경에서 건측 다리 과부하를 패널티로 부여합니다.
++
++    통증 회피만 있으면 정책이 부상 다리를 완전히 버리고 3족 보행으로 수렴할 수 있습니다.
++    실제 동물에서는 이런 보행이 가능하더라도 나머지 다리에 과부하/피로/불안정 비용이 생기므로,
++    건측 다리의 과도한 peak GRF를 별도 생체역학 비용으로 둡니다.
++
++    이 항은 부상 다리를 쓰라고 직접 보상하지 않습니다. 대신 3족 보행의 건측 과부하를
++    비용화해서 partial unloading 해를 더 경쟁력 있게 만듭니다.
++    """
++    contact_by_foot, _ = _foot_force_tensor(env, sensor_name=sensor_name, use_z_only=use_z_only)
++    peg_leg_idx = _peg_leg_index_per_env(env)
++
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    threshold = float(overload_threshold)
++    scale = float(overload_scale)
++    for injured_leg in range(4):
++        mask = peg_leg_idx == injured_leg
++        if not mask.any():
++            continue
++        intact_forces = contact_by_foot[mask].clone()
++        intact_forces[:, injured_leg] = 0.0
++        overload = torch.clamp(intact_forces - threshold, min=0.0)
++        penalty[mask] = torch.clamp(torch.sum(overload, dim=1) * scale, max=float(max_penalty))
++    return penalty
++
++
++def _splint_severity_alpha(
++    env: "ManagerBasedRLEnv",
++    severe_splint_length: float,
++    mild_splint_length: float,
++) -> torch.Tensor:
++    """Return 0 for shortest/severe splints and 1 for longest/mild splints."""
++    splint_length = getattr(env, "_peg_leg_splint_length", None)
++    if splint_length is None:
++        return torch.ones(env.num_envs, device=env.device)
++
++    lo = float(severe_splint_length)
++    hi = float(mild_splint_length)
++    denom = max(hi - lo, 1e-6)
++    return torch.clamp((splint_length.to(env.device) - lo) / denom, min=0.0, max=1.0)
++
++
++def penalize_injured_limb_force_nonuse(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    use_z_only: bool = True,
++    ema_alpha: float = 0.995,
++    severe_splint_length: float = 0.20,
++    mild_splint_length: float = 0.30,
++    min_force_severe: float = 2.0,
++    min_force_mild: float = 11.0,
++    front_leg_multiplier: float = 1.15,
++    rear_leg_multiplier: float = 1.0,
++    ramp_start_steps: int = 1000,
++    ramp_duration_steps: int = 8000,
++    include_calf: bool = True,
++) -> torch.Tensor:
++    """Penalize complete injured-limb non-use while still allowing unloading.
++
++    This is the minimal "use the limb" term: pain alone makes the optimal policy
++    abandon the injured limb and walk as a tripod (non-use is the robust global
++    optimum because any contact costs Pbase and a quadruped is statically stable
++    on three legs). This term enforces only the *premise* of the peg-leg problem —
++    the damaged limb must still bear a minimum residual load (a viability/use
++    floor) — and leaves *how* it is used (force magnitude, duty, asymmetry, CoM
++    shift) to emerge from the pain penalty. With a floor below the pain threshold
++    Fth, the injured-limb force settles in the band [floor, Fth] ≈ ~10N, i.e. the
++    paper's ~69% GRF reduction (normal per-leg force ≈ 32N).
++
++    include_calf=True matches the pain term: for a peg leg the rigid stump
++    contacts ground through the calf, so the limb load is foot + calf. Measuring
++    foot-only would mis-read calf-borne load as non-use.
++    """
++    contact_by_foot, _ = _foot_force_tensor(env, sensor_name=sensor_name, use_z_only=use_z_only)
++    if include_calf:
++        calf_names = ["FL_calf", "FR_calf", "RL_calf", "RR_calf"]
++        contact_by_calf, _ = _link_force_tensor(
++            env,
++            sensor_name=sensor_name,
++            link_name_candidates=calf_names,
++            use_z_only=use_z_only,
++        )
++    else:
++        contact_by_calf = torch.zeros_like(contact_by_foot)
++    contact_by_leg = contact_by_foot + contact_by_calf
++    peg_leg_idx = _peg_leg_index_per_env(env)
++
++    injured_force = torch.zeros(env.num_envs, device=env.device)
++    for leg in range(4):
++        mask = peg_leg_idx == leg
++        if mask.any():
++            injured_force[mask] = contact_by_leg[mask, leg]
++
++    alpha = float(max(0.0, min(0.9999, ema_alpha)))
++    ema = getattr(env, "_go1_injured_force_ema", None)
++    prev_idx = getattr(env, "_go1_injured_force_ema_idx", None)
++    prev_splint = getattr(env, "_go1_injured_force_ema_splint", None)
++    splint_length = getattr(env, "_peg_leg_splint_length", None)
++    if ema is None or ema.shape != injured_force.shape:
++        ema = injured_force.detach().clone()
++    else:
++        changed = prev_idx is None or prev_idx.shape != peg_leg_idx.shape
++        if changed:
++            changed_mask = torch.ones_like(peg_leg_idx, dtype=torch.bool)
++        else:
++            changed_mask = prev_idx.to(env.device) != peg_leg_idx
++            if splint_length is not None:
++                if prev_splint is None or prev_splint.shape != splint_length.shape:
++                    changed_mask = torch.ones_like(changed_mask, dtype=torch.bool)
++                else:
++                    changed_mask = changed_mask | (
++                        torch.abs(prev_splint.to(env.device) - splint_length.to(env.device)) > 1e-4
++                    )
++        if changed_mask.any():
++            ema[changed_mask] = injured_force.detach()[changed_mask]
++        ema.mul_(alpha).add_(injured_force.detach(), alpha=1.0 - alpha)
++    env._go1_injured_force_ema = ema
++    env._go1_injured_force_ema_idx = peg_leg_idx.detach().clone()
++    if splint_length is not None:
++        env._go1_injured_force_ema_splint = splint_length.detach().clone()
++
++    severity_alpha = _splint_severity_alpha(env, severe_splint_length, mild_splint_length)
++    target = float(min_force_severe) + (
++        float(min_force_mild) - float(min_force_severe)
++    ) * severity_alpha
++    front_mask = (peg_leg_idx == 0) | (peg_leg_idx == 1)
++    target = torch.where(
++        front_mask,
++        target * float(front_leg_multiplier),
++        target * float(rear_leg_multiplier),
++    )
++
++    is_injured = peg_leg_idx >= 0
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    penalty[is_injured] = torch.clamp(target[is_injured] - ema[is_injured], min=0.0)
++    return penalty * _step_ramp(env, ramp_start_steps, ramp_duration_steps)
++
++
++def penalize_injured_limb_load_duty_nonuse(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    load_contact_threshold: float = 10.0,
++    use_z_only: bool = True,
++    ema_alpha: float = 0.995,
++    severe_splint_length: float = 0.20,
++    mild_splint_length: float = 0.30,
++    min_duty_severe: float = 0.05,
++    min_duty_mild: float = 0.28,
++    front_leg_multiplier: float = 1.10,
++    rear_leg_multiplier: float = 1.0,
++    ramp_start_steps: int = 1000,
++    ramp_duration_steps: int = 8000,
++) -> torch.Tensor:
++    """Penalize near-zero load-bearing duty on the injured limb.
++
++    This is a weak regularizer for the analysis metric, not a target gait
++    template. It only activates when the time-averaged load-bearing duty falls
++    below a severity-aware floor.
++    """
++    contact_by_foot, _ = _foot_force_tensor(env, sensor_name=sensor_name, use_z_only=use_z_only)
++    peg_leg_idx = _peg_leg_index_per_env(env)
++
++    injured_contact = torch.zeros(env.num_envs, device=env.device)
++    for leg in range(4):
++        mask = peg_leg_idx == leg
++        if mask.any():
++            injured_contact[mask] = (
++                contact_by_foot[mask, leg] > float(load_contact_threshold)
++            ).float()
++
++    alpha = float(max(0.0, min(0.9999, ema_alpha)))
++    ema = getattr(env, "_go1_injured_load_duty_ema", None)
++    prev_idx = getattr(env, "_go1_injured_load_duty_ema_idx", None)
++    prev_splint = getattr(env, "_go1_injured_load_duty_ema_splint", None)
++    splint_length = getattr(env, "_peg_leg_splint_length", None)
++    if ema is None or ema.shape != injured_contact.shape:
++        ema = injured_contact.detach().clone()
++    else:
++        changed = prev_idx is None or prev_idx.shape != peg_leg_idx.shape
++        if changed:
++            changed_mask = torch.ones_like(peg_leg_idx, dtype=torch.bool)
++        else:
++            changed_mask = prev_idx.to(env.device) != peg_leg_idx
++            if splint_length is not None:
++                if prev_splint is None or prev_splint.shape != splint_length.shape:
++                    changed_mask = torch.ones_like(changed_mask, dtype=torch.bool)
++                else:
++                    changed_mask = changed_mask | (
++                        torch.abs(prev_splint.to(env.device) - splint_length.to(env.device)) > 1e-4
++                    )
++        if changed_mask.any():
++            ema[changed_mask] = injured_contact.detach()[changed_mask]
++        ema.mul_(alpha).add_(injured_contact.detach(), alpha=1.0 - alpha)
++    env._go1_injured_load_duty_ema = ema
++    env._go1_injured_load_duty_ema_idx = peg_leg_idx.detach().clone()
++    if splint_length is not None:
++        env._go1_injured_load_duty_ema_splint = splint_length.detach().clone()
++
++    severity_alpha = _splint_severity_alpha(env, severe_splint_length, mild_splint_length)
++    target = float(min_duty_severe) + (
++        float(min_duty_mild) - float(min_duty_severe)
++    ) * severity_alpha
++    front_mask = (peg_leg_idx == 0) | (peg_leg_idx == 1)
++    target = torch.where(
++        front_mask,
++        torch.clamp(target * float(front_leg_multiplier), max=0.5),
++        torch.clamp(target * float(rear_leg_multiplier), max=0.5),
++    )
++
++    is_injured = peg_leg_idx >= 0
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    penalty[is_injured] = torch.clamp(target[is_injured] - ema[is_injured], min=0.0)
++    return penalty * _step_ramp(env, ramp_start_steps, ramp_duration_steps)
++
++
++def penalize_injured_limb_load_duty_overuse(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    load_contact_threshold: float = 10.0,
++    use_z_only: bool = True,
++    ema_alpha: float = 0.995,
++    severe_splint_length: float = 0.20,
++    mild_splint_length: float = 0.30,
++    max_duty_severe: float = 0.30,
++    max_duty_mild: float = 0.50,
++    front_leg_multiplier: float = 0.95,
++    rear_leg_multiplier: float = 1.0,
++    ramp_start_steps: int = 1000,
++    ramp_duration_steps: int = 8000,
++) -> torch.Tensor:
++    """Penalize excessive load-bearing duty on the injured limb.
++
++    The non-use term sets a residual-support floor. This term adds the matching
++    upper bound: severe/short splints should unload more, while mild/long
++    splints may still take partial support. It is still an antalgic cost, not a
++    gait template, because it only depends on injured-limb load duty and splint
++    severity.
++    """
++    contact_by_foot, _ = _foot_force_tensor(env, sensor_name=sensor_name, use_z_only=use_z_only)
++    peg_leg_idx = _peg_leg_index_per_env(env)
++
++    injured_contact = torch.zeros(env.num_envs, device=env.device)
++    for leg in range(4):
++        mask = peg_leg_idx == leg
++        if mask.any():
++            injured_contact[mask] = (
++                contact_by_foot[mask, leg] > float(load_contact_threshold)
++            ).float()
++
++    alpha = float(max(0.0, min(0.9999, ema_alpha)))
++    ema = getattr(env, "_go1_injured_load_duty_overuse_ema", None)
++    prev_idx = getattr(env, "_go1_injured_load_duty_overuse_ema_idx", None)
++    prev_splint = getattr(env, "_go1_injured_load_duty_overuse_ema_splint", None)
++    splint_length = getattr(env, "_peg_leg_splint_length", None)
++    if ema is None or ema.shape != injured_contact.shape:
++        ema = injured_contact.detach().clone()
++    else:
++        changed = prev_idx is None or prev_idx.shape != peg_leg_idx.shape
++        if changed:
++            changed_mask = torch.ones_like(peg_leg_idx, dtype=torch.bool)
++        else:
++            changed_mask = prev_idx.to(env.device) != peg_leg_idx
++            if splint_length is not None:
++                if prev_splint is None or prev_splint.shape != splint_length.shape:
++                    changed_mask = torch.ones_like(changed_mask, dtype=torch.bool)
++                else:
++                    changed_mask = changed_mask | (
++                        torch.abs(prev_splint.to(env.device) - splint_length.to(env.device)) > 1e-4
++                    )
++        if changed_mask.any():
++            ema[changed_mask] = injured_contact.detach()[changed_mask]
++        ema.mul_(alpha).add_(injured_contact.detach(), alpha=1.0 - alpha)
++    env._go1_injured_load_duty_overuse_ema = ema
++    env._go1_injured_load_duty_overuse_ema_idx = peg_leg_idx.detach().clone()
++    if splint_length is not None:
++        env._go1_injured_load_duty_overuse_ema_splint = splint_length.detach().clone()
++
++    severity_alpha = _splint_severity_alpha(env, severe_splint_length, mild_splint_length)
++    target = float(max_duty_severe) + (
++        float(max_duty_mild) - float(max_duty_severe)
++    ) * severity_alpha
++    front_mask = (peg_leg_idx == 0) | (peg_leg_idx == 1)
++    target = torch.where(
++        front_mask,
++        target * float(front_leg_multiplier),
++        target * float(rear_leg_multiplier),
++    )
++
++    is_injured = peg_leg_idx >= 0
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    penalty[is_injured] = torch.clamp(ema[is_injured] - target[is_injured], min=0.0)
++    return penalty * _step_ramp(env, ramp_start_steps, ramp_duration_steps)
++
++
++def penalize_injured_limb_light_drag(
++    env: "ManagerBasedRLEnv",
++    sensor_name: str = "contact_forces",
++    contact_threshold: float = 1.0,
++    load_contact_threshold: float = 10.0,
++    use_z_only: bool = True,
++    ramp_start_steps: int = 1000,
++    ramp_duration_steps: int = 8000,
++) -> torch.Tensor:
++    """Penalize injured-limb toe dragging/light contact without support.
++
++    A high raw contact duty with low load-bearing duty makes the foot look like it
++    is dragging or skimming the ground. This term penalizes contact in the
++    interval (contact_threshold, load_contact_threshold), while allowing genuine
++    load-bearing contacts that contribute residual support.
++    """
++    contact_by_foot, _ = _foot_force_tensor(env, sensor_name=sensor_name, use_z_only=use_z_only)
++    peg_leg_idx = _peg_leg_index_per_env(env)
++
++    penalty = torch.zeros(env.num_envs, device=env.device)
++    for leg in range(4):
++        mask = peg_leg_idx == leg
++        if not mask.any():
++            continue
++        injured_force = contact_by_foot[mask, leg]
++        light_drag = (
++            (injured_force > float(contact_threshold))
++            & (injured_force < float(load_contact_threshold))
++        ).float()
++        penalty[mask] = light_drag
++    return penalty * _step_ramp(env, ramp_start_steps, ramp_duration_steps)
+diff --git a/source/go1_lab/go1_lab/ui_extension_example.py b/source/go1_lab/go1_lab/ui_extension_example.py
+old mode 100644
+new mode 100755
+diff --git a/source/go1_lab/pyproject.toml b/source/go1_lab/pyproject.toml
+old mode 100644
+new mode 100755
+diff --git a/source/go1_lab/setup.py b/source/go1_lab/setup.py
+old mode 100644
+new mode 100755

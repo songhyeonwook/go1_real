@@ -1,0 +1,153 @@
+{
+  "input": {
+    "name": "obs",
+    "obs_dim": 51,
+    "layout": [
+      {
+        "group": "policy",
+        "name": "base_lin_vel",
+        "dim": 3,
+        "slice": [
+          0,
+          3
+        ],
+        "func": "isaaclab.envs.mdp.observations:base_lin_vel"
+      },
+      {
+        "group": "policy",
+        "name": "base_ang_vel",
+        "dim": 3,
+        "slice": [
+          3,
+          6
+        ],
+        "func": "isaaclab.envs.mdp.observations:base_ang_vel"
+      },
+      {
+        "group": "policy",
+        "name": "projected_gravity",
+        "dim": 3,
+        "slice": [
+          6,
+          9
+        ],
+        "func": "isaaclab.envs.mdp.observations:projected_gravity"
+      },
+      {
+        "group": "policy",
+        "name": "velocity_commands",
+        "dim": 3,
+        "slice": [
+          9,
+          12
+        ],
+        "func": "isaaclab.envs.mdp.observations:generated_commands"
+      },
+      {
+        "group": "policy",
+        "name": "joint_pos",
+        "dim": 12,
+        "slice": [
+          12,
+          24
+        ],
+        "func": "isaaclab.envs.mdp.observations:joint_pos_rel"
+      },
+      {
+        "group": "policy",
+        "name": "joint_vel",
+        "dim": 12,
+        "slice": [
+          24,
+          36
+        ],
+        "func": "isaaclab.envs.mdp.observations:joint_vel_rel"
+      },
+      {
+        "group": "policy",
+        "name": "actions",
+        "dim": 12,
+        "slice": [
+          36,
+          48
+        ],
+        "func": "isaaclab.envs.mdp.observations:last_action"
+      },
+      {
+        "group": "privileged_obs",
+        "name": "peg_leg_index",
+        "dim": 1,
+        "slice": [
+          48,
+          49
+        ],
+        "func": "go1_lab.tasks.manager_based.go1_lab.mdp.observations:peg_leg_index"
+      },
+      {
+        "group": "privileged_obs",
+        "name": "peg_leg_splint_length",
+        "dim": 1,
+        "slice": [
+          49,
+          50
+        ],
+        "func": "go1_lab.tasks.manager_based.go1_lab.mdp.observations:peg_leg_splint_length"
+      },
+      {
+        "group": "privileged_obs",
+        "name": "peg_leg_foot_friction",
+        "dim": 1,
+        "slice": [
+          50,
+          51
+        ],
+        "func": "go1_lab.tasks.manager_based.go1_lab.mdp.observations:peg_leg_foot_friction"
+      }
+    ],
+    "healthy_privileged_defaults": {
+      "peg_leg_index": 0.0,
+      "peg_leg_splint_length": 0.0,
+      "peg_leg_foot_friction": 1.0
+    }
+  },
+  "action": {
+    "output_name": "actions",
+    "action_dim": 12,
+    "action_scale": 0.25,
+    "default_joint_position_patterns": {
+      ".*L_hip_joint": "0.1",
+      ".*R_hip_joint": "-0.1",
+      "F[L,R]_thigh_joint": "0.8",
+      "R[L,R]_thigh_joint": "1.0",
+      ".*_calf_joint": "-1.5"
+    },
+    "joint_names_from_env_yaml": [
+      ".*"
+    ],
+    "postprocess": "target_joint_pos = default_joint_pos + action_scale * raw_policy_action",
+    "preserve_order": "false",
+    "use_default_offset": "true"
+  },
+  "policy": {
+    "class_name": "ActorCritic",
+    "actor_obs_normalization": "false",
+    "hidden_dims_from_agent_yaml": [
+      512,
+      256,
+      128
+    ],
+    "activation_from_agent_yaml": "elu"
+  },
+  "run": {
+    "experiment_name": "unitree_go1_rough_healthy",
+    "run_name": "faithful_p1_seed1",
+    "seed": "1",
+    "max_iterations": "6000"
+  },
+  "artifacts": {
+    "jit_path": "/home/unicon/hw_ws/go1_peg/scripts/rsl_rl/logs/rsl_rl/phase1/exported/policy.pt",
+    "onnx_path": "/home/unicon/hw_ws/go1_peg/scripts/rsl_rl/logs/rsl_rl/phase1/exported/policy.onnx",
+    "deployment_config_path": "/home/unicon/hw_ws/go1_peg/scripts/rsl_rl/logs/rsl_rl/phase1/exported/deployment_config.json"
+  },
+  "config_warnings": []
+}

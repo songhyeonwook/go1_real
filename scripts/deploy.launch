@@ -1,0 +1,17 @@
+<launch>
+    <!-- Model Configuration -->
+    <arg name="model_path" default="/home/shw/go1_real/model/policy.pt" />
+    <arg name="injured_leg_idx" default="-1" /> <!-- -1: Normal, 0: FL, 1: FR, 2: RL, 3: RR -->
+    
+    <!-- Control Gains -->
+    <arg name="Kp" default="25.0" />
+    <arg name="Kd" default="0.5" />
+
+    <!-- Main Deployment Node -->
+    <node name="go1_policy_deploy" pkg="go1_real" type="deploy_policy.py" output="screen">
+        <param name="model_path" value="$(arg model_path)" />
+        <param name="injured_leg_idx" value="$(arg injured_leg_idx)" />
+        <param name="Kp" value="$(arg Kp)" />
+        <param name="Kd" value="$(arg Kd)" />
+    </node>
+</launch>

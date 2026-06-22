@@ -1,0 +1,200 @@
+{
+  "obs_dim": 51,
+  "action_dim": 12,
+  "hidden_dims": [
+    512,
+    256,
+    128
+  ],
+  "activation": "elu",
+  "linear_layer_ids": [
+    0,
+    2,
+    4,
+    6
+  ],
+  "source_checkpoint": "/home/unicon/hw_ws/go1_peg/scripts/rsl_rl/logs/rsl_rl/phase1/model_5999.pt",
+  "source_log_dir": "/home/unicon/hw_ws/go1_peg/scripts/rsl_rl/logs/rsl_rl/phase1",
+  "agent_yaml": "/home/unicon/hw_ws/go1_peg/scripts/rsl_rl/logs/rsl_rl/phase1/params/agent.yaml",
+  "env_yaml": "/home/unicon/hw_ws/go1_peg/scripts/rsl_rl/logs/rsl_rl/phase1/params/env.yaml",
+  "run": {
+    "experiment_name": "unitree_go1_rough_healthy",
+    "run_name": "faithful_p1_seed1",
+    "seed": "1",
+    "max_iterations": "6000"
+  },
+  "policy": {
+    "class_name": "ActorCritic",
+    "actor_obs_normalization": "false",
+    "hidden_dims_from_agent_yaml": [
+      512,
+      256,
+      128
+    ],
+    "activation_from_agent_yaml": "elu"
+  },
+  "input": {
+    "name": "obs",
+    "obs_dim": 51,
+    "layout": [
+      {
+        "group": "policy",
+        "name": "base_lin_vel",
+        "dim": 3,
+        "slice": [
+          0,
+          3
+        ],
+        "func": "isaaclab.envs.mdp.observations:base_lin_vel"
+      },
+      {
+        "group": "policy",
+        "name": "base_ang_vel",
+        "dim": 3,
+        "slice": [
+          3,
+          6
+        ],
+        "func": "isaaclab.envs.mdp.observations:base_ang_vel"
+      },
+      {
+        "group": "policy",
+        "name": "projected_gravity",
+        "dim": 3,
+        "slice": [
+          6,
+          9
+        ],
+        "func": "isaaclab.envs.mdp.observations:projected_gravity"
+      },
+      {
+        "group": "policy",
+        "name": "velocity_commands",
+        "dim": 3,
+        "slice": [
+          9,
+          12
+        ],
+        "func": "isaaclab.envs.mdp.observations:generated_commands"
+      },
+      {
+        "group": "policy",
+        "name": "joint_pos",
+        "dim": 12,
+        "slice": [
+          12,
+          24
+        ],
+        "func": "isaaclab.envs.mdp.observations:joint_pos_rel"
+      },
+      {
+        "group": "policy",
+        "name": "joint_vel",
+        "dim": 12,
+        "slice": [
+          24,
+          36
+        ],
+        "func": "isaaclab.envs.mdp.observations:joint_vel_rel"
+      },
+      {
+        "group": "policy",
+        "name": "actions",
+        "dim": 12,
+        "slice": [
+          36,
+          48
+        ],
+        "func": "isaaclab.envs.mdp.observations:last_action"
+      },
+      {
+        "group": "privileged_obs",
+        "name": "peg_leg_index",
+        "dim": 1,
+        "slice": [
+          48,
+          49
+        ],
+        "func": "go1_lab.tasks.manager_based.go1_lab.mdp.observations:peg_leg_index"
+      },
+      {
+        "group": "privileged_obs",
+        "name": "peg_leg_splint_length",
+        "dim": 1,
+        "slice": [
+          49,
+          50
+        ],
+        "func": "go1_lab.tasks.manager_based.go1_lab.mdp.observations:peg_leg_splint_length"
+      },
+      {
+        "group": "privileged_obs",
+        "name": "peg_leg_foot_friction",
+        "dim": 1,
+        "slice": [
+          50,
+          51
+        ],
+        "func": "go1_lab.tasks.manager_based.go1_lab.mdp.observations:peg_leg_foot_friction"
+      }
+    ],
+    "healthy_privileged_defaults": {
+      "peg_leg_index": 0.0,
+      "peg_leg_splint_length": 0.0,
+      "peg_leg_foot_friction": 1.0
+    }
+  },
+  "action": {
+    "output_name": "actions",
+    "action_dim": 12,
+    "action_scale": 0.25,
+    "default_joint_position_patterns": {
+      ".*L_hip_joint": "0.1",
+      ".*R_hip_joint": "-0.1",
+      "F[L,R]_thigh_joint": "0.8",
+      "R[L,R]_thigh_joint": "1.0",
+      ".*_calf_joint": "-1.5"
+    },
+    "joint_names_from_env_yaml": [
+      ".*"
+    ],
+    "postprocess": "target_joint_pos = default_joint_pos + action_scale * raw_policy_action",
+    "preserve_order": "false",
+    "use_default_offset": "true"
+  },
+  "artifacts": {
+    "jit_path": "/home/unicon/hw_ws/go1_peg/scripts/rsl_rl/logs/rsl_rl/phase1/exported/policy.pt",
+    "onnx_path": "/home/unicon/hw_ws/go1_peg/scripts/rsl_rl/logs/rsl_rl/phase1/exported/policy.onnx",
+    "deployment_config_path": "/home/unicon/hw_ws/go1_peg/scripts/rsl_rl/logs/rsl_rl/phase1/exported/deployment_config.json"
+  },
+  "config_warnings": [],
+  "reference_zero_obs_action": [
+    -1.1191421747207642,
+    0.36101043224334717,
+    -1.3249287605285645,
+    1.137463092803955,
+    0.231334388256073,
+    -1.273728370666504,
+    -1.8435956239700317,
+    0.11080653220415115,
+    1.143802523612976,
+    1.914835810661316,
+    0.19094830751419067,
+    1.132912039756775
+  ],
+  "reference_healthy_obs_action": [
+    -1.208132028579712,
+    0.2702975273132324,
+    -1.5720854997634888,
+    1.217578649520874,
+    0.280579537153244,
+    -1.544603943824768,
+    -2.158172369003296,
+    0.13182976841926575,
+    1.2920836210250854,
+    2.194714307785034,
+    0.1291886270046234,
+    1.3222311735153198
+  ],
+  "note": "Input is the full actor observation vector in the layout listed in input.layout. For this Phase-1 healthy policy the final privileged terms are [peg_leg_index=0, peg_leg_splint_length=0, peg_leg_foot_friction=1]. Output is the raw policy action before Isaac Lab action scaling/default-joint-position application."
+}
