@@ -4,6 +4,8 @@ import numpy as np
 import os
 import sys
 import json
+import time
+import traceback
 from geometry_msgs.msg import Twist
 
 # Depending on Unitree ROS installation, the package name could be unitree_legged_msgs or similar
@@ -22,6 +24,8 @@ class Go1PolicyDeployNode:
         # ==========================================
         self.model_path = rospy.get_param('~model_path', '/home/shw/go1_real/model/policy.pt')
         self.is_onnx = self.model_path.endswith('.onnx')
+        self.is_numpy = self.model_path.endswith('.npz')
+        self.policy_backend = None
 
         # Control frequencies (env: sim dt 0.005 * decimation 4 = 0.02s -> 50Hz)
         self.loop_rate = rospy.Rate(50)  # 50Hz (dt = 0.02s)
@@ -42,6 +46,8 @@ class Go1PolicyDeployNode:
         # used for sim-to-real of this policy. Tune on hardware if the gait feels stiff/soft.
         self.Kp = rospy.get_param('~Kp', 25.0)
         self.Kd = rospy.get_param('~Kd', 0.5)
+        self.shutdown_damp_repeats = rospy.get_param('~shutdown_damp_repeats', 20)
+        self.shutdown_damp_dt = rospy.get_param('~shutdown_damp_dt', 0.02)
 
         # Remapping Index: Unitree Hardware Order [FR, FL, RR, RL] -> Isaac Order [FL, FR, RL, RR]
         # Isaac indices: FL(0,1,2), FR(3,4,5), RL(6,7,8), RR(9,10,11)
@@ -97,6 +103,7 @@ class Go1PolicyDeployNode:
 
         self.has_state = False
         self.is_running = False
+        self._sending_damp = False
 
         # ==========================================
         # 4. Load Machine Learning Policy
@@ -107,6 +114,7 @@ class Go1PolicyDeployNode:
         # 5. Setup Subscribers & Publishers
         # ==========================================
         self.pub_low_cmd = rospy.Publisher('/low_cmd', LowCmd, queue_size=1)
+        rospy.on_shutdown(self.on_ros_shutdown)
 
         self.sub_low_state = rospy.Subscriber('/low_state', LowState, self.low_state_callback)
         self.sub_cmd_vel = rospy.Subscriber('/cmd_vel', Twist, self.cmd_vel_callback)
@@ -148,16 +156,24 @@ class Go1PolicyDeployNode:
 
         rospy.loginfo(f"Loading model from {self.model_path}...")
 
-        if self.is_onnx:
+        if self.is_numpy:
+            self.load_numpy_policy(self.model_path)
+        elif self.is_onnx:
             try:
                 import onnxruntime as ort
                 self.ort_session = ort.InferenceSession(self.model_path)
                 # This is a feed-forward ActorCritic (no recurrent state): single input -> single output.
                 self.onnx_input_name = self.ort_session.get_inputs()[0].name
+                self.policy_backend = 'onnxruntime'
                 rospy.loginfo(f"Successfully loaded ONNX model (input='{self.onnx_input_name}').")
             except Exception as e:
-                rospy.logerr(f"Failed to load ONNX Runtime: {e}. Try 'pip3 install onnxruntime' or use the PyTorch JIT model.")
-                sys.exit(1)
+                fallback_path = os.path.join(os.path.dirname(self.model_path), 'policy_numpy.npz')
+                if os.path.exists(fallback_path):
+                    rospy.logwarn(f"Failed to load ONNX Runtime: {e}. Falling back to NumPy policy at {fallback_path}.")
+                    self.load_numpy_policy(fallback_path)
+                else:
+                    rospy.logerr(f"Failed to load ONNX Runtime: {e}. Try 'pip3 install onnxruntime' or use policy_numpy.npz.")
+                    sys.exit(1)
         else:
             try:
                 import torch
@@ -165,12 +181,34 @@ class Go1PolicyDeployNode:
                 self.device = torch.device("cpu")
                 self.policy = torch.jit.load(self.model_path, map_location=self.device)
                 self.policy.eval()
+                self.policy_backend = 'torch'
                 rospy.loginfo("Successfully loaded PyTorch JIT policy.")
             except Exception as e:
-                rospy.logerr(f"Failed to load PyTorch JIT policy: {e}")
-                sys.exit(1)
+                fallback_path = os.path.join(os.path.dirname(self.model_path), 'policy_numpy.npz')
+                if os.path.exists(fallback_path):
+                    rospy.logwarn(f"Failed to load PyTorch JIT policy: {e}. Falling back to NumPy policy at {fallback_path}.")
+                    self.load_numpy_policy(fallback_path)
+                else:
+                    rospy.logerr(f"Failed to load PyTorch JIT policy: {e}")
+                    sys.exit(1)
 
         self.verify_policy()
+
+    def load_numpy_policy(self, path):
+        try:
+            data = np.load(path)
+            self.numpy_weights = [
+                (data['0_weight'].astype(np.float32), data['0_bias'].astype(np.float32)),
+                (data['2_weight'].astype(np.float32), data['2_bias'].astype(np.float32)),
+                (data['4_weight'].astype(np.float32), data['4_bias'].astype(np.float32)),
+                (data['6_weight'].astype(np.float32), data['6_bias'].astype(np.float32)),
+            ]
+            self.policy_backend = 'numpy'
+            self.model_path = path
+            rospy.loginfo(f"Successfully loaded NumPy policy from {path}.")
+        except Exception as e:
+            rospy.logerr(f"Failed to load NumPy policy from {path}: {e}")
+            sys.exit(1)
 
     def verify_policy(self):
         # Optional self-test: if policy_metadata.json carries reference outputs, confirm the
@@ -270,15 +308,25 @@ class Go1PolicyDeployNode:
 
     def run_inference(self, obs):
         # Feed-forward ActorCritic inference (no recurrent hidden state).
-        if self.is_onnx:
+        if self.policy_backend == 'numpy':
+            x = obs.astype(np.float32)
+            for i, (weight, bias) in enumerate(self.numpy_weights):
+                x = np.matmul(x, weight.T) + bias
+                if i < len(self.numpy_weights) - 1:
+                    x = np.where(x > 0.0, x, np.exp(x) - 1.0)
+            return x.astype(np.float32)
+        elif self.policy_backend == 'onnxruntime':
             obs_in = obs.reshape(1, -1).astype(np.float32)  # (1, obs_dim)
             actions = self.ort_session.run(None, {self.onnx_input_name: obs_in})[0]
             return actions.flatten()
-        else:
+        elif self.policy_backend == 'torch':
             with self.torch.inference_mode():
                 obs_t = self.torch.from_numpy(obs).float().to(self.device).unsqueeze(0)  # (1, obs_dim)
                 actions_t = self.policy(obs_t)
                 return actions_t.cpu().numpy().flatten()
+        else:
+            rospy.logerr("Policy backend is not initialized.")
+            sys.exit(1)
 
     def stand_up(self):
         # Smooth stand up routine
@@ -336,96 +384,133 @@ class Go1PolicyDeployNode:
             cmd.motorCmd[i].tau = 0.0
         self.pub_low_cmd.publish(cmd)
 
-    def main_loop(self):
-        # Wait for initial state callback to populate buffers
-        rospy.loginfo("Waiting for /low_state topics to initialize...")
-        while not rospy.is_shutdown() and not self.has_state:
-            rospy.sleep(0.1)
-
-        if rospy.is_shutdown():
+    def send_repeated_damp_commands(self, reason, repeats=None):
+        # Repeat damping commands so the final packets are likely to reach the low-level bridge.
+        if self._sending_damp:
             return
 
-        # Execute safety stand up
-        self.stand_up()
-
-        # Initialize main policy loop
-        self.is_running = True
-        rospy.loginfo("Starting Control Loop at 50Hz...")
-
-        while not rospy.is_shutdown():
-            # 1. Perform orientation safety check
-            if not self.safety_check():
+        self._sending_damp = True
+        try:
+            repeats = self.shutdown_damp_repeats if repeats is None else repeats
+            rospy.logwarn(f"Sending damping commands for safe stop: {reason}")
+            for _ in range(max(1, int(repeats))):
                 self.send_damp_command()
-                break
+                time.sleep(max(0.0, float(self.shutdown_damp_dt)))
+        except Exception:
+            rospy.logerr("Failed while sending damping commands:\n" + traceback.format_exc())
+        finally:
+            self._sending_damp = False
 
-            # 2. Gather and construct observations
-            obs = self.get_observations()
+    def on_ros_shutdown(self):
+        self.send_repeated_damp_commands("ROS shutdown")
 
-            # 3. Run inference to get raw actions [-1, 1]
-            raw_actions = self.run_inference(obs)
+    def main_loop(self):
+        try:
+            # Wait for initial state callback to populate buffers
+            rospy.loginfo("Waiting for /low_state topics to initialize...")
+            while not rospy.is_shutdown() and not self.has_state:
+                rospy.sleep(0.1)
 
-            # 4. Apply Peg Leg Masking for action storing & publishing
-            # If a leg is physically pegged/locked, we don't allow the policy to compute commands for it
-            if self.injured_leg_idx >= 0:
-                # Calf joint is locked at default splint lock position
-                # In Isaac Order, calf joint is leg_idx * 3 + 2
-                calf_idx = self.injured_leg_idx * 3 + 2
-                raw_actions[calf_idx] = 0.0 # Action mask = 0 ensures target = default joint position
+            if rospy.is_shutdown():
+                return
 
-            # Store last action for next policy step
-            self.last_action = raw_actions.copy()
+            # Execute safety stand up
+            self.stand_up()
 
-            # 5. Post-process and scale actions
-            # action -> target joint pos = default_pos + raw_action * scale
-            target_q_isaac = self.default_joint_pos + raw_actions * self.action_scale
+            # Initialize main policy loop
+            self.is_running = True
+            rospy.loginfo("Starting Control Loop at 50Hz...")
 
-            # Clip targets to absolute safety joint limits
-            target_q_isaac = np.clip(target_q_isaac, self.joint_pos_min, self.joint_pos_max)
+            while not rospy.is_shutdown():
+                # 1. Perform orientation safety check
+                if not self.safety_check():
+                    self.send_repeated_damp_commands("tilt threshold exceeded")
+                    break
 
-            # 6. Remap target joint positions from Isaac order back to Unitree order
-            target_q_unitree = target_q_isaac[self.I2U]
+                # 2. Gather and construct observations
+                obs = self.get_observations()
 
-            # 7. Construct LowCmd message
-            cmd = LowCmd()
-            cmd.levelFlag = 0xFF
+                # 3. Run inference to get raw actions [-1, 1]
+                raw_actions = self.run_inference(obs)
 
-            for idx in range(12):
-                cmd.motorCmd[idx].mode = 0x0A # low level joint control
-                cmd.motorCmd[idx].q = target_q_unitree[idx]
-                cmd.motorCmd[idx].dq = 0.0
-                cmd.motorCmd[idx].tau = 0.0
+                # 4. Apply Peg Leg Masking for action storing & publishing
+                # If a leg is physically pegged/locked, we don't allow the policy to compute commands for it
+                if self.injured_leg_idx >= 0:
+                    # Calf joint is locked at default splint lock position
+                    # In Isaac Order, calf joint is leg_idx * 3 + 2
+                    calf_idx = self.injured_leg_idx * 3 + 2
+                    raw_actions[calf_idx] = 0.0 # Action mask = 0 ensures target = default joint position
 
-                # Set gains
-                cmd.motorCmd[idx].Kp = self.Kp
-                cmd.motorCmd[idx].Kd = self.Kd
+                # Store last action for next policy step
+                self.last_action = raw_actions.copy()
 
-            # 8. Special overrides for the injured leg physically
-            if self.injured_leg_idx >= 0:
-                # Get index of injured calf in Unitree array
-                isaac_calf_idx = self.injured_leg_idx * 3 + 2
-                unitree_calf_idx = self.I2U[isaac_calf_idx]
+                # 5. Post-process and scale actions
+                # action -> target joint pos = default_pos + raw_action * scale
+                target_q_isaac = self.default_joint_pos + raw_actions * self.action_scale
 
-                # Options for injured leg motor command:
-                # Setting Kp=0, Kd=0 effectively powers OFF the joint so the user can lock it physically!
-                # Alternatively, keep high stiffness if the motor is electronically locked.
-                # By default we set it to damping mode to prevent fighting a physical lock splint!
-                cmd.motorCmd[unitree_calf_idx].Kp = 0.0
-                cmd.motorCmd[unitree_calf_idx].Kd = 0.0
-                cmd.motorCmd[unitree_calf_idx].tau = 0.0
+                # Clip targets to absolute safety joint limits
+                target_q_isaac = np.clip(target_q_isaac, self.joint_pos_min, self.joint_pos_max)
 
-            # 9. Publish to hardware
-            self.pub_low_cmd.publish(cmd)
+                # 6. Remap target joint positions from Isaac order back to Unitree order
+                target_q_unitree = target_q_isaac[self.I2U]
 
-            # Maintain 50Hz frequency
-            self.loop_rate.sleep()
+                # 7. Construct LowCmd message
+                cmd = LowCmd()
+                cmd.levelFlag = 0xFF
 
-        # Safe exit: Send damp command on shutdown
-        rospy.loginfo("Shutting down deployment node safely...")
-        self.send_damp_command()
+                for idx in range(12):
+                    cmd.motorCmd[idx].mode = 0x0A # low level joint control
+                    cmd.motorCmd[idx].q = target_q_unitree[idx]
+                    cmd.motorCmd[idx].dq = 0.0
+                    cmd.motorCmd[idx].tau = 0.0
+
+                    # Set gains
+                    cmd.motorCmd[idx].Kp = self.Kp
+                    cmd.motorCmd[idx].Kd = self.Kd
+
+                # 8. Special overrides for the injured leg physically
+                if self.injured_leg_idx >= 0:
+                    # Get index of injured calf in Unitree array
+                    isaac_calf_idx = self.injured_leg_idx * 3 + 2
+                    unitree_calf_idx = self.I2U[isaac_calf_idx]
+
+                    # Options for injured leg motor command:
+                    # Setting Kp=0, Kd=0 effectively powers OFF the joint so the user can lock it physically!
+                    # Alternatively, keep high stiffness if the motor is electronically locked.
+                    # By default we set it to damping mode to prevent fighting a physical lock splint!
+                    cmd.motorCmd[unitree_calf_idx].Kp = 0.0
+                    cmd.motorCmd[unitree_calf_idx].Kd = 0.0
+                    cmd.motorCmd[unitree_calf_idx].tau = 0.0
+
+                # 9. Publish to hardware
+                self.pub_low_cmd.publish(cmd)
+
+                # Maintain 50Hz frequency
+                self.loop_rate.sleep()
+        except rospy.ROSInterruptException:
+            self.send_repeated_damp_commands("ROSInterruptException in control loop")
+            raise
+        except Exception:
+            rospy.logerr("Unhandled exception in policy control loop:\n" + traceback.format_exc())
+            self.send_repeated_damp_commands("unhandled exception")
+            raise
+        finally:
+            self.is_running = False
+            rospy.loginfo("Shutting down deployment node safely...")
+            self.send_repeated_damp_commands("main loop exit")
 
 if __name__ == '__main__':
+    node = None
     try:
         node = Go1PolicyDeployNode()
         node.main_loop()
+    except KeyboardInterrupt:
+        if node is not None:
+            node.send_repeated_damp_commands("KeyboardInterrupt")
     except rospy.ROSInterruptException:
-        pass
+        if node is not None:
+            node.send_repeated_damp_commands("ROSInterruptException")
+    except Exception:
+        if node is not None:
+            node.send_repeated_damp_commands("top-level exception")
+        raise

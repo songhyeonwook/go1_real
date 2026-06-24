@@ -1,11 +1,13 @@
 <launch>
     <!-- Model Configuration -->
-    <arg name="model_path" default="/home/shw/go1_real/model/policy.pt" />
+    <arg name="model_path" default="$(find go1_real)/model/policy_numpy.npz" />
     <arg name="injured_leg_idx" default="-1" /> <!-- -1: Normal, 0: FL, 1: FR, 2: RL, 3: RR -->
     
     <!-- Control Gains -->
     <arg name="Kp" default="25.0" />
     <arg name="Kd" default="0.5" />
+    <arg name="shutdown_damp_repeats" default="20" />
+    <arg name="shutdown_damp_dt" default="0.02" />
 
     <!-- Main Deployment Node -->
     <node name="go1_policy_deploy" pkg="go1_real" type="deploy_policy.py" output="screen">
@@ -13,5 +15,7 @@
         <param name="injured_leg_idx" value="$(arg injured_leg_idx)" />
         <param name="Kp" value="$(arg Kp)" />
         <param name="Kd" value="$(arg Kd)" />
+        <param name="shutdown_damp_repeats" value="$(arg shutdown_damp_repeats)" />
+        <param name="shutdown_damp_dt" value="$(arg shutdown_damp_dt)" />
     </node>
 </launch>
