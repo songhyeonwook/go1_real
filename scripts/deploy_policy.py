@@ -46,8 +46,13 @@ class Go1PolicyDeployNode:
         # used for sim-to-real of this policy. Tune on hardware if the gait feels stiff/soft.
         self.Kp = rospy.get_param('~Kp', 25.0)
         self.Kd = rospy.get_param('~Kd', 0.5)
+        self.enable_policy = rospy.get_param('~enable_policy', False)
+        self.stand_up_time = rospy.get_param('~stand_up_time', 6.0)
+        self.action_scale_multiplier = rospy.get_param('~action_scale_multiplier', 1.0)
+        self.policy_ramp_time = rospy.get_param('~policy_ramp_time', 5.0)
         self.shutdown_damp_repeats = rospy.get_param('~shutdown_damp_repeats', 20)
         self.shutdown_damp_dt = rospy.get_param('~shutdown_damp_dt', 0.02)
+        rospy.loginfo(f"Policy execution enabled: {self.enable_policy}")
 
         # Remapping Index: Unitree Hardware Order [FR, FL, RR, RL] -> Isaac Order [FL, FR, RL, RR]
         # Isaac indices: FL(0,1,2), FR(3,4,5), RL(6,7,8), RR(9,10,11)
@@ -328,6 +333,12 @@ class Go1PolicyDeployNode:
             rospy.logerr("Policy backend is not initialized.")
             sys.exit(1)
 
+    def make_low_cmd(self):
+        cmd = LowCmd()
+        cmd.head = b'\xfe\xef'
+        cmd.levelFlag = 0xFF
+        return cmd
+
     def stand_up(self):
         # Smooth stand up routine
         rospy.loginfo("Initiating Stand Up Phase... Moving slowly to default posture.")
@@ -335,7 +346,7 @@ class Go1PolicyDeployNode:
         target_q_isaac = self.default_joint_pos.copy()
         target_q_unitree = target_q_isaac[self.I2U]
 
-        interpolation_time = 4.0 # 4 seconds to stand up
+        interpolation_time = max(1.0, float(self.stand_up_time))
         steps = int(interpolation_time * 50) # 50Hz * 4s = 200 steps
 
         for s in range(steps):
@@ -347,8 +358,7 @@ class Go1PolicyDeployNode:
             current_target = (1 - alpha) * initial_q + alpha * target_q_unitree
 
             # Send commands
-            cmd = LowCmd()
-            cmd.levelFlag = 0xFF
+            cmd = self.make_low_cmd()
             for idx in range(12):
                 cmd.motorCmd[idx].mode = 0x0A # Low-level joint mode
                 cmd.motorCmd[idx].q = current_target[idx]
@@ -373,14 +383,26 @@ class Go1PolicyDeployNode:
 
     def send_damp_command(self):
         # Switch robot motors to pure damping mode safely
-        cmd = LowCmd()
-        cmd.levelFlag = 0xFF
+        cmd = self.make_low_cmd()
         for i in range(12):
             cmd.motorCmd[i].mode = 0x0A
             cmd.motorCmd[i].q = 0.0
             cmd.motorCmd[i].dq = 0.0
             cmd.motorCmd[i].Kp = 0.0
             cmd.motorCmd[i].Kd = 3.5 # Moderate damping to safe collapse
+            cmd.motorCmd[i].tau = 0.0
+        self.pub_low_cmd.publish(cmd)
+
+    def send_state_poll_command(self):
+        # Some Unitree ROS bridges publish /low_state only from the /low_cmd callback.
+        # This zero-torque packet wakes that callback without standing the robot up.
+        cmd = self.make_low_cmd()
+        for i in range(12):
+            cmd.motorCmd[i].mode = 0x0A
+            cmd.motorCmd[i].q = 0.0
+            cmd.motorCmd[i].dq = 0.0
+            cmd.motorCmd[i].Kp = 0.0
+            cmd.motorCmd[i].Kd = 0.0
             cmd.motorCmd[i].tau = 0.0
         self.pub_low_cmd.publish(cmd)
 
@@ -409,6 +431,7 @@ class Go1PolicyDeployNode:
             # Wait for initial state callback to populate buffers
             rospy.loginfo("Waiting for /low_state topics to initialize...")
             while not rospy.is_shutdown() and not self.has_state:
+                self.send_state_poll_command()
                 rospy.sleep(0.1)
 
             if rospy.is_shutdown():
@@ -419,7 +442,11 @@ class Go1PolicyDeployNode:
 
             # Initialize main policy loop
             self.is_running = True
-            rospy.loginfo("Starting Control Loop at 50Hz...")
+            policy_start_time = rospy.Time.now().to_sec()
+            if self.enable_policy:
+                rospy.loginfo("Starting Policy Control Loop at 50Hz...")
+            else:
+                rospy.logwarn("Policy inference is DISABLED. Holding default standing posture with zero actions.")
 
             while not rospy.is_shutdown():
                 # 1. Perform orientation safety check
@@ -430,8 +457,14 @@ class Go1PolicyDeployNode:
                 # 2. Gather and construct observations
                 obs = self.get_observations()
 
-                # 3. Run inference to get raw actions [-1, 1]
-                raw_actions = self.run_inference(obs)
+                # 3. Run inference to get raw actions [-1, 1], or hold the default posture.
+                if self.enable_policy:
+                    raw_actions = self.run_inference(obs)
+                    ramp = min(1.0, max(0.0, (rospy.Time.now().to_sec() - policy_start_time)
+                                    / max(1e-3, float(self.policy_ramp_time))))
+                    raw_actions = raw_actions * float(self.action_scale_multiplier) * ramp
+                else:
+                    raw_actions = np.zeros(12, dtype=np.float32)
 
                 # 4. Apply Peg Leg Masking for action storing & publishing
                 # If a leg is physically pegged/locked, we don't allow the policy to compute commands for it
@@ -455,8 +488,7 @@ class Go1PolicyDeployNode:
                 target_q_unitree = target_q_isaac[self.I2U]
 
                 # 7. Construct LowCmd message
-                cmd = LowCmd()
-                cmd.levelFlag = 0xFF
+                cmd = self.make_low_cmd()
 
                 for idx in range(12):
                     cmd.motorCmd[idx].mode = 0x0A # low level joint control
