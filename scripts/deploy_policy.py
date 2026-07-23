@@ -90,7 +90,13 @@ class Go1PolicyDeployNode:
         self.obs_dim = 51
         self.action_scale = 0.25
         # Privileged peg-leg terms appended after the 48 proprio dims, in layout order.
+        # Empty for the proprioception-only (R48) student.
         self.privileged_obs = np.array([0.0, 0.0, 1.0], dtype=np.float32)  # [index, splint_len, friction]
+        # Recurrence metadata (set from deployment_config.json; auto-detected at load time as a fallback).
+        self.is_recurrent = False
+        self.rnn_num_layers = 1
+        self.rnn_hidden_size = 256
+        self.numpy_lstm = None
         self.load_deployment_config()
 
         # ==========================================
@@ -105,6 +111,12 @@ class Go1PolicyDeployNode:
         self.cmd_vel = np.zeros(3) # [vx, vy, wz]
 
         self.last_action = np.zeros(12) # Last action output from policy
+
+        # Recurrent LSTM state (used only when the loaded policy is recurrent).
+        # ONNX carries these as external inputs; the NumPy path advances them in place;
+        # the TorchScript path keeps them internally.
+        self.h_state = None
+        self.c_state = None
 
         self.has_state = False
         self.is_running = False
@@ -148,9 +160,19 @@ class Go1PolicyDeployNode:
             if priv:
                 self.privileged_obs = np.array(
                     [float(defaults.get(e['name'], 0.0)) for e in priv], dtype=np.float32)
+            else:
+                self.privileged_obs = np.zeros(0, dtype=np.float32)  # student: proprioception-only, no privileged
+
+            # Optional recurrence block (LSTM student). Auto-detected again at model load as a fallback.
+            rec = cfg.get('recurrent')
+            if isinstance(rec, dict) and rec.get('is_recurrent'):
+                self.is_recurrent = True
+                self.rnn_num_layers = int(rec.get('rnn_num_layers', self.rnn_num_layers))
+                self.rnn_hidden_size = int(rec.get('rnn_hidden_size', self.rnn_hidden_size))
 
             rospy.loginfo(f"Loaded deployment_config.json: obs_dim={self.obs_dim}, "
-                          f"action_scale={self.action_scale}, privileged_defaults={self.privileged_obs.tolist()}")
+                          f"action_scale={self.action_scale}, privileged_defaults={self.privileged_obs.tolist()}, "
+                          f"recurrent={self.is_recurrent}")
         except Exception as e:
             rospy.logwarn(f"Failed to parse {cfg_path}: {e}. Using built-in defaults.")
 
@@ -167,10 +189,16 @@ class Go1PolicyDeployNode:
             try:
                 import onnxruntime as ort
                 self.ort_session = ort.InferenceSession(self.model_path)
-                # This is a feed-forward ActorCritic (no recurrent state): single input -> single output.
-                self.onnx_input_name = self.ort_session.get_inputs()[0].name
+                self.onnx_in_names = [i.name for i in self.ort_session.get_inputs()]
+                self.onnx_out_names = [o.name for o in self.ort_session.get_outputs()]
+                self.onnx_input_name = self.onnx_in_names[0]
+                # A recurrent export exposes the LSTM state as extra I/O:
+                # (obs, h_in, c_in) -> (actions, h_out, c_out).
+                if len(self.onnx_in_names) >= 3:
+                    self.is_recurrent = True
                 self.policy_backend = 'onnxruntime'
-                rospy.loginfo(f"Successfully loaded ONNX model (input='{self.onnx_input_name}').")
+                rospy.loginfo(f"Successfully loaded ONNX model (inputs={self.onnx_in_names}, "
+                              f"recurrent={self.is_recurrent}).")
             except Exception as e:
                 fallback_path = os.path.join(os.path.dirname(self.model_path), 'policy_numpy.npz')
                 if os.path.exists(fallback_path):
@@ -186,8 +214,14 @@ class Go1PolicyDeployNode:
                 self.device = torch.device("cpu")
                 self.policy = torch.jit.load(self.model_path, map_location=self.device)
                 self.policy.eval()
+                # A recurrent JIT export carries its LSTM state internally as buffers
+                # named hidden_state / cell_state; forward(obs) updates them in place.
+                self.jit_state_buffers = [b for n, b in self.policy.named_buffers()
+                                          if n in ('hidden_state', 'cell_state')]
+                if self.jit_state_buffers:
+                    self.is_recurrent = True
                 self.policy_backend = 'torch'
-                rospy.loginfo("Successfully loaded PyTorch JIT policy.")
+                rospy.loginfo(f"Successfully loaded PyTorch JIT policy (recurrent={self.is_recurrent}).")
             except Exception as e:
                 fallback_path = os.path.join(os.path.dirname(self.model_path), 'policy_numpy.npz')
                 if os.path.exists(fallback_path):
@@ -208,12 +242,41 @@ class Go1PolicyDeployNode:
                 (data['4_weight'].astype(np.float32), data['4_bias'].astype(np.float32)),
                 (data['6_weight'].astype(np.float32), data['6_bias'].astype(np.float32)),
             ]
+            # A recurrent student npz also carries the single-layer LSTM that runs before the MLP.
+            if 'lstm_weight_ih' in data:
+                self.numpy_lstm = {
+                    'weight_ih': data['lstm_weight_ih'].astype(np.float32),
+                    'weight_hh': data['lstm_weight_hh'].astype(np.float32),
+                    'bias_ih': data['lstm_bias_ih'].astype(np.float32),
+                    'bias_hh': data['lstm_bias_hh'].astype(np.float32),
+                }
+                self.is_recurrent = True
+                self.rnn_hidden_size = int(self.numpy_lstm['weight_hh'].shape[1])
+                self.rnn_num_layers = 1
+            else:
+                self.numpy_lstm = None
             self.policy_backend = 'numpy'
             self.model_path = path
-            rospy.loginfo(f"Successfully loaded NumPy policy from {path}.")
+            rospy.loginfo(f"Successfully loaded NumPy policy from {path} (recurrent={self.is_recurrent}).")
         except Exception as e:
             rospy.logerr(f"Failed to load NumPy policy from {path}: {e}")
             sys.exit(1)
+
+    def reset_hidden(self):
+        # Zero the recurrent state so an episode starts from the same initial state the policy
+        # was evaluated with. No-op for feed-forward policies.
+        if not self.is_recurrent:
+            return
+        if self.policy_backend == 'onnxruntime':
+            shape = (self.rnn_num_layers, 1, self.rnn_hidden_size)
+            self.h_state = np.zeros(shape, dtype=np.float32)
+            self.c_state = np.zeros(shape, dtype=np.float32)
+        elif self.policy_backend == 'numpy':
+            self.h_state = np.zeros(self.rnn_hidden_size, dtype=np.float32)
+            self.c_state = np.zeros(self.rnn_hidden_size, dtype=np.float32)
+        elif self.policy_backend == 'torch':
+            for b in getattr(self, 'jit_state_buffers', []):
+                b.zero_()
 
     def verify_policy(self):
         # Optional self-test: if policy_metadata.json carries reference outputs, confirm the
@@ -225,19 +288,27 @@ class Go1PolicyDeployNode:
         try:
             with open(meta_path, 'r') as f:
                 meta = json.load(f)
-            ref = meta.get('reference_healthy_obs_action')
+            # For a recurrent policy the reference is taken from a freshly zeroed hidden state.
+            ref = meta.get('reference_zero_obs_action') if self.is_recurrent else None
+            if ref is None:
+                ref = meta.get('reference_healthy_obs_action')
             if ref is None:
                 return
             probe = np.zeros(self.obs_dim, dtype=np.float32)
-            probe[-len(self.privileged_obs):] = self.privileged_obs  # healthy probe = zeros + privileged defaults
+            if self.privileged_obs.size > 0:
+                probe[-self.privileged_obs.size:] = self.privileged_obs  # healthy probe = zeros + privileged defaults
+            self.reset_hidden()
             out = self.run_inference(probe)
             if np.allclose(out, np.array(ref, dtype=np.float32), atol=1e-3):
-                rospy.loginfo("Policy self-test PASSED (matches reference healthy action).")
+                rospy.loginfo("Policy self-test PASSED (matches reference action).")
             else:
                 rospy.logwarn("Policy self-test MISMATCH vs reference action! "
                               "Check that the model and obs layout are consistent before running on hardware.")
         except Exception as e:
             rospy.logwarn(f"Policy self-test skipped ({e}).")
+        finally:
+            # Leave the hidden state clean for the control loop regardless of the test result.
+            self.reset_hidden()
 
     def low_state_callback(self, msg):
         # 1. Extract Joint Positions and Velocities
@@ -298,7 +369,7 @@ class Go1PolicyDeployNode:
         # [24:36] joint_vel
         # [36:48] actions             (last policy action)
         # [48:51] privileged peg-leg  [peg_leg_index, peg_leg_splint_length, peg_leg_foot_friction]
-        obs = np.concatenate([
+        parts = [
             base_lin_vel,                                  # 3
             self.imu_gyro.astype(np.float32),              # 3
             projected_gravity,                             # 3
@@ -306,14 +377,16 @@ class Go1PolicyDeployNode:
             joint_pos_rel.astype(np.float32),              # 12
             joint_vel_isaac.astype(np.float32),            # 12
             self.last_action.astype(np.float32),           # 12
-            self.privileged_obs                            # 3
-        ])
+        ]
+        if self.privileged_obs.size > 0:
+            parts.append(self.privileged_obs)              # 3 (Phase-1 healthy only)
 
-        return obs
+        return np.concatenate(parts)
 
     def run_inference(self, obs):
-        # Feed-forward ActorCritic inference (no recurrent hidden state).
         if self.policy_backend == 'numpy':
+            if self.is_recurrent and self.numpy_lstm is not None:
+                return self._numpy_recurrent_forward(obs)
             x = obs.astype(np.float32)
             for i, (weight, bias) in enumerate(self.numpy_weights):
                 x = np.matmul(x, weight.T) + bias
@@ -322,16 +395,45 @@ class Go1PolicyDeployNode:
             return x.astype(np.float32)
         elif self.policy_backend == 'onnxruntime':
             obs_in = obs.reshape(1, -1).astype(np.float32)  # (1, obs_dim)
+            if self.is_recurrent:
+                # Feed and carry the LSTM state: (obs, h_in, c_in) -> (actions, h_out, c_out).
+                feeds = {
+                    self.onnx_in_names[0]: obs_in,
+                    self.onnx_in_names[1]: self.h_state,
+                    self.onnx_in_names[2]: self.c_state,
+                }
+                actions, self.h_state, self.c_state = self.ort_session.run(self.onnx_out_names, feeds)
+                return actions.flatten()
             actions = self.ort_session.run(None, {self.onnx_input_name: obs_in})[0]
             return actions.flatten()
         elif self.policy_backend == 'torch':
             with self.torch.inference_mode():
                 obs_t = self.torch.from_numpy(obs).float().to(self.device).unsqueeze(0)  # (1, obs_dim)
+                # A recurrent JIT export advances its hidden/cell buffers internally.
                 actions_t = self.policy(obs_t)
                 return actions_t.cpu().numpy().flatten()
         else:
             rospy.logerr("Policy backend is not initialized.")
             sys.exit(1)
+
+    def _numpy_recurrent_forward(self, obs):
+        # Single-step LSTM (PyTorch gate order i, f, g, o) then the ELU MLP; advances h/c in place.
+        w = self.numpy_lstm
+        x = obs.astype(np.float32)
+        gates = w['weight_ih'] @ x + w['bias_ih'] + w['weight_hh'] @ self.h_state + w['bias_hh']
+        H = self.rnn_hidden_size
+        i = 1.0 / (1.0 + np.exp(-gates[:H]))
+        f = 1.0 / (1.0 + np.exp(-gates[H:2 * H]))
+        g = np.tanh(gates[2 * H:3 * H])
+        o = 1.0 / (1.0 + np.exp(-gates[3 * H:]))
+        self.c_state = (f * self.c_state + i * g).astype(np.float32)
+        self.h_state = (o * np.tanh(self.c_state)).astype(np.float32)
+        x = self.h_state
+        for j, (weight, bias) in enumerate(self.numpy_weights):
+            x = np.matmul(x, weight.T) + bias
+            if j < len(self.numpy_weights) - 1:
+                x = np.where(x > 0.0, x, np.exp(x) - 1.0)
+        return x.astype(np.float32)
 
     def make_low_cmd(self):
         cmd = LowCmd()
@@ -439,6 +541,10 @@ class Go1PolicyDeployNode:
 
             # Execute safety stand up
             self.stand_up()
+
+            # Start the policy episode from a clean recurrent state and zero last action.
+            self.last_action = np.zeros(12)
+            self.reset_hidden()
 
             # Initialize main policy loop
             self.is_running = True
