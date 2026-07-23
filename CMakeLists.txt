@@ -12,6 +12,8 @@ catkin_package()
 
 catkin_install_python(PROGRAMS
   scripts/deploy_policy.py
+  scripts/check_stand.py
+  scripts/check_gait.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

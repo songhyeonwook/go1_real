@@ -48,9 +48,18 @@ class Go1PolicyDeployNode:
         # use a stiffer gain to get on its feet; keep the POLICY phase near training.
         self.Kp = rospy.get_param('~Kp', 20.0)
         self.Kd = rospy.get_param('~Kd', 0.5)
-        # Stand-up phase gains (stiffer is fine here, only holds the default pose).
-        self.stand_Kp = rospy.get_param('~stand_Kp', 60.0)
-        self.stand_Kd = rospy.get_param('~stand_Kd', 1.0)
+
+        # Stand-up gains, separate from the policy gains.
+        # stand_up() is open-loop PD to a fixed pose with no integral term and no gravity
+        # feedforward, so its steady-state error is exactly tau_required / Kp. Measured on
+        # hardware at the students' trained Kp=20: the rear knees settle 0.65 rad short of the
+        # target and rest on the ground (tauEst/Kp matched the observed error on all 12 joints).
+        # At Kp=60 the worst error is 0.13 rad and the robot stands level. The gain is blended
+        # back down to Kp across policy_ramp_time as the policy's authority ramps up, so the
+        # policy still runs at the gains it was trained with.
+        # Defaults to Kp (resolved after load_policy) => no behaviour change unless it is set.
+        self.stand_up_Kp = rospy.get_param('~stand_up_Kp', None)
+        self.stand_up_Kd = rospy.get_param('~stand_up_Kd', 1.0)
         self.enable_policy = rospy.get_param('~enable_policy', False)
         self.stand_up_time = rospy.get_param('~stand_up_time', 6.0)
         self.action_scale_multiplier = rospy.get_param('~action_scale_multiplier', 1.0)
@@ -139,6 +148,15 @@ class Go1PolicyDeployNode:
         # 4. Load Machine Learning Policy
         # ==========================================
         self.load_policy()
+
+        # Resolve the stand-up gain now that load_policy() has settled the final policy gains.
+        if self.stand_up_Kp is None:
+            self.stand_up_Kp = self.Kp
+        self.stand_up_Kp = float(self.stand_up_Kp)
+        self.stand_up_Kd = float(self.stand_up_Kd)
+        if abs(self.stand_up_Kp - self.Kp) > 1e-6 or abs(self.stand_up_Kd - self.Kd) > 1e-6:
+            rospy.loginfo(f"Stand-up gains Kp={self.stand_up_Kp}/Kd={self.stand_up_Kd} blend to "
+                          f"policy gains Kp={self.Kp}/Kd={self.Kd} over {self.policy_ramp_time}s.")
 
         # ==========================================
         # 5. Setup Subscribers & Publishers
@@ -243,6 +261,11 @@ class Go1PolicyDeployNode:
                 else:
                     rospy.logerr(f"Failed to load PyTorch JIT policy: {e}")
                     sys.exit(1)
+
+        # Allocate the recurrent buffers as soon as the backend is known. verify_policy() also
+        # resets them, but it returns early when policy_metadata.json is absent — and the NumPy
+        # recurrent path dereferences h_state on the very first inference.
+        self.reset_hidden()
 
         self.verify_policy()
 
@@ -483,8 +506,8 @@ class Go1PolicyDeployNode:
                 cmd.motorCmd[idx].mode = 0x0A # Low-level joint mode
                 cmd.motorCmd[idx].q = current_target[idx]
                 cmd.motorCmd[idx].dq = 0.0
-                cmd.motorCmd[idx].Kp = 10.0 + alpha * (self.stand_Kp - 10.0) # ramp to stand stiffness
-                cmd.motorCmd[idx].Kd = self.stand_Kd
+                cmd.motorCmd[idx].Kp = 10.0 + alpha * (self.stand_up_Kp - 10.0) # Gradually ramp stiffness
+                cmd.motorCmd[idx].Kd = self.stand_up_Kd
                 cmd.motorCmd[idx].tau = 0.0
 
             self.pub_low_cmd.publish(cmd)
@@ -557,6 +580,15 @@ class Go1PolicyDeployNode:
             if rospy.is_shutdown():
                 return
 
+            # Fail loudly *before* standing up if the assembled observation does not match what
+            # the loaded weights expect — a silent dimension mismatch would drive the motors
+            # from garbage.
+            probe_dim = self.get_observations().shape[0]
+            if probe_dim != self.obs_dim:
+                rospy.logerr(f"Observation dim mismatch: assembled {probe_dim}, policy expects "
+                             f"{self.obs_dim}. Refusing to run.")
+                return
+
             # Execute safety stand up
             self.stand_up()
 
@@ -582,13 +614,20 @@ class Go1PolicyDeployNode:
                 obs = self.get_observations()
 
                 # 3. Run inference to get raw actions [-1, 1], or hold the default posture.
+                # The ramp drives BOTH the action authority (0 -> full) and the gain blend
+                # (stand-up -> policy). They must move together: dropping the stiff stand-up
+                # gain before the policy can push would let the robot sag back onto its knees.
                 if self.enable_policy:
-                    raw_actions = self.run_inference(obs)
                     ramp = min(1.0, max(0.0, (rospy.Time.now().to_sec() - policy_start_time)
                                     / max(1e-3, float(self.policy_ramp_time))))
-                    raw_actions = raw_actions * float(self.action_scale_multiplier) * ramp
+                    raw_actions = self.run_inference(obs)
                 else:
+                    # Policy disabled: hold the stand-up pose at the stand-up gains.
+                    ramp = 0.0
                     raw_actions = np.zeros(12, dtype=np.float32)
+
+                current_Kp = self.stand_up_Kp + ramp * (self.Kp - self.stand_up_Kp)
+                current_Kd = self.stand_up_Kd + ramp * (self.Kd - self.stand_up_Kd)
 
                 # 4. Apply Peg Leg Masking for action storing & publishing
                 # If a leg is physically pegged/locked, we don't allow the policy to compute commands for it
@@ -598,12 +637,22 @@ class Go1PolicyDeployNode:
                     calf_idx = 8 + self.injured_leg_idx
                     raw_actions[calf_idx] = 0.0 # Action mask = 0 ensures target = default joint position
 
-                # Store last action for next policy step
+                # Store last action for next policy step.
+                # Training's observation term (mdp.last_action) feeds back the RAW policy action,
+                # so the bringup scaling applied below must NOT leak in here — otherwise the
+                # policy is told it took an action it never took, and the gait is a closed-loop
+                # limit cycle that depends on exactly this feedback.
                 self.last_action = raw_actions.copy()
 
-                # 5. Post-process and scale actions
-                # action -> target joint pos = default_pos + raw_action * scale
-                target_q_isaac = self.default_joint_pos + raw_actions * self.action_scale
+                # 5. Post-process and scale actions.
+                # The bringup scaling attenuates only what the motors are told to do. NOTE: the
+                # gait only sustains itself above a certain authority — measured on hardware,
+                # action_scale_multiplier=0.2 damps the limit cycle out entirely and the robot
+                # just holds a slightly shifted static pose (0/4 legs moving).
+                applied_actions = raw_actions * float(self.action_scale_multiplier) * ramp
+
+                # action -> target joint pos = default_pos + action * scale
+                target_q_isaac = self.default_joint_pos + applied_actions * self.action_scale
 
                 # Clip targets to absolute safety joint limits
                 target_q_isaac = np.clip(target_q_isaac, self.joint_pos_min, self.joint_pos_max)
@@ -621,8 +670,8 @@ class Go1PolicyDeployNode:
                     cmd.motorCmd[idx].tau = 0.0
 
                     # Set gains
-                    cmd.motorCmd[idx].Kp = self.Kp
-                    cmd.motorCmd[idx].Kd = self.Kd
+                    cmd.motorCmd[idx].Kp = current_Kp
+                    cmd.motorCmd[idx].Kd = current_Kd
 
                 # 8. Special overrides for the injured leg physically
                 if self.injured_leg_idx >= 0:

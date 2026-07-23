@@ -1,0 +1,68 @@
+<launch>
+    <!--
+      Phase-3 proprioception-only LSTM student (antalgic / fault_tolerant / symmetry).
+
+      Use this instead of deploy.launch for the students: deploy.launch forces Kp=30/Kd=1.5 and
+      action_scale_multiplier=0.2, both of which are wrong for these policies (see below).
+
+      Every value here comes from a measurement on the Go1 NX, not from a guess.
+    -->
+    <arg name="paradigm" default="antalgic" /> <!-- antalgic | fault_tolerant | symmetry -->
+    <arg name="model_path" default="$(find go1_real)/$(arg paradigm)/exported/policy_numpy.npz" />
+    <arg name="injured_leg_idx" default="-1" /> <!-- -1: Normal, 0: FL, 1: FR, 2: RL, 3: RR -->
+
+    <!--
+      Policy gains. The students trained against an explicit DCMotor PD (stiffness 20.0 /
+      damping 0.5, params_student/env.yaml), so these are the gains the policy learned against
+      rather than a sim-to-real convention. The shipped .npz carries no gains, so set them here.
+    -->
+    <arg name="Kp" default="20.0" />
+    <arg name="Kd" default="0.5" />
+
+    <!--
+      Stand-up gains. stand_up() is open-loop PD with no integral and no gravity feedforward,
+      so its steady-state error is exactly tau_required / Kp. Measured on hardware:
+        Kp=20 -> rear knees settle 0.66 rad short and rest on the ground (cannot stand)
+        Kp=60 -> worst joint error 0.13 rad, projected_gravity_z = -0.999 (stands level)
+      The node blends this back down to Kp across policy_ramp_time as the policy takes over.
+      Measured at the end of the blend: commanded Kp=20, projected_gravity_z = -1.000 — the
+      policy holds the robot up at its own trained gain, which it cannot do from a collapsed
+      start (required knee torque falls 12.9 -> 5.1 Nm once the leg is off the ground).
+      Set stand_up_Kp:=20 to disable the blend and stand at the trained gain.
+    -->
+    <arg name="stand_up_Kp" default="60.0" />
+    <arg name="stand_up_Kd" default="1.0" />
+
+    <!--
+      Action authority. The gait is a closed-loop limit cycle, not an open-loop clock: the
+      policy moves the joints, and the resulting state change drives the next phase. Attenuating
+      the action breaks that loop. Measured on hardware at 0.2: 0/4 legs moving, all 12 joints
+      under 0.003 rad peak-to-peak — a fixed point, with no gait at any cmd_vel.
+      1.0 runs the policy as trained; policy_ramp_time still ramps authority 0 -> 1 gradually,
+      which is what makes the takeover safe. If you lower this, re-check that all four legs
+      still move before putting the robot on the ground.
+    -->
+    <arg name="action_scale_multiplier" default="1.0" />
+    <arg name="policy_ramp_time" default="8.0" />
+
+    <!-- Conservative bringup: policy off by default, slow stand. -->
+    <arg name="enable_policy" default="false" />
+    <arg name="stand_up_time" default="10.0" />
+    <arg name="shutdown_damp_repeats" default="20" />
+    <arg name="shutdown_damp_dt" default="0.02" />
+
+    <node name="go1_policy_deploy" pkg="go1_real" type="deploy_policy.py" output="screen">
+        <param name="model_path" value="$(arg model_path)" />
+        <param name="injured_leg_idx" value="$(arg injured_leg_idx)" />
+        <param name="Kp" value="$(arg Kp)" />
+        <param name="Kd" value="$(arg Kd)" />
+        <param name="stand_up_Kp" value="$(arg stand_up_Kp)" />
+        <param name="stand_up_Kd" value="$(arg stand_up_Kd)" />
+        <param name="enable_policy" value="$(arg enable_policy)" />
+        <param name="stand_up_time" value="$(arg stand_up_time)" />
+        <param name="action_scale_multiplier" value="$(arg action_scale_multiplier)" />
+        <param name="policy_ramp_time" value="$(arg policy_ramp_time)" />
+        <param name="shutdown_damp_repeats" value="$(arg shutdown_damp_repeats)" />
+        <param name="shutdown_damp_dt" value="$(arg shutdown_damp_dt)" />
+    </node>
+</launch>
