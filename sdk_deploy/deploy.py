@@ -1,8 +1,9 @@
 """phase1 정책 실물 Go1 배포 메인 루프.
 
 모드 (반드시 이 순서로 검증할 것 — README 의 안전 절차 참고):
-  dry-run : 아무것도 송신하지 않고 관측/추정치만 출력. 로봇을 매단 채
-            손으로 움직여 관절각 부호·순서와 추정기 출력을 검증합니다.
+  dry-run : 모터 명령 없이 관측/추정치만 출력 (상태 회신을 위한 zero-torque
+            요청 패킷만 송신). 로봇을 매단 채 손으로 움직여 관절각
+            부호·순서와 추정기 출력을 검증합니다.
   hang    : 로봇을 매단 상태에서 기립 자세 추종 + 정책(명령 0) 실행.
             다리가 발산 없이 트로트 비슷하게 움직이는지 확인합니다.
   stand   : 지면에서 기립 자세만 유지 (정책 미실행).
@@ -16,6 +17,11 @@
   python3 deploy.py --mode hang --policy exported/policy.onnx
   python3 deploy.py --mode walk --policy exported/policy.onnx --vx 0.4
 """
+
+import os
+
+os.environ.setdefault('OPENBLAS_NUM_THREADS', '1')
+os.environ.setdefault('OMP_NUM_THREADS', '1')
 
 import argparse
 import select
@@ -44,6 +50,24 @@ def _stdin_pressed() -> bool:
     return False
 
 
+def _flush_stdin():
+    """시작 전에 tty 입력 버퍼를 비웁니다.
+
+    명령 입력 후 Enter 를 한 번 더 눌렀거나 붙여넣기에 개행이 딸려 오면
+    그 개행이 버퍼에 남아, 첫 _stdin_pressed() 가 곧바로 비상정지로
+    오인합니다 (실측: hang 시작 즉시 '사용자 중단'). e-stop 은 시작 이후의
+    Enter 만 받아야 하므로 여기서 묵은 입력을 버립니다.
+    """
+    if not _STDIN_IS_TTY:
+        return
+    try:
+        import termios
+        termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
+    except Exception:
+        while select.select([sys.stdin], [], [], 0)[0]:
+            sys.stdin.readline()
+
+
 def _smoothstep(t: float) -> float:
     t = np.clip(t, 0.0, 1.0)
     return t * t * (3.0 - 2.0 * t)
@@ -59,7 +83,15 @@ class Deployer:
     # ---- 공통 루프 유틸 --------------------------------------------------
 
     def _step_estimator(self, state, dt):
-        contact = state.foot_force > C.CONTACT_FORCE_THRESHOLD
+        # 첫 상태 패킷이 도착하기 전에는 quat 가 [0,0,0,0]입니다. 그대로
+        # KF 에 넣으면 회전행렬이 NaN 이 되고 공분산까지 오염돼 이후 모든
+        # 출력이 NaN 으로 남으므로, 유효한 자세가 올 때까지 스킵합니다.
+        if np.linalg.norm(state.quat_wxyz) < 0.5:
+            return {
+                "v_body": np.zeros(3), "v_world": np.zeros(3),
+                "p_world": np.zeros(3), "contact_count": 0,
+            }
+        contact = (state.foot_force - C.FOOT_FORCE_BIAS) > C.CONTACT_FORCE_THRESHOLD
         return self.est.update(
             state.quat_wxyz, state.gyro, state.accel,
             state.q, state.dq, contact, dt,
@@ -89,6 +121,11 @@ class Deployer:
 
     def _estimator_warmup(self, seconds=1.0):
         for _ in range(int(seconds / C.CONTROL_DT)):
+            # MCU 는 패킷을 보낸 클라이언트에게만 상태를 회신하므로, 아직
+            # 아무 명령도 안 보내는 워밍업에서는 zero-torque 로 상태를
+            # 요청해야 합니다. 없으면 stand_up() 이 시작 자세를 전부 0 으로
+            # 읽어 잘못된 자세에서 보간을 시작합니다.
+            self.robot.send_poll()
             state = self.robot.read_state()
             self._step_estimator(state, C.CONTROL_DT)
             time.sleep(C.CONTROL_DT if not self.args.mock else 0.0)
@@ -162,11 +199,13 @@ class Deployer:
             self._sleep_rest(t0)
 
     def dry_run(self, duration):
-        print("[DRY] 송신 없음 — 로봇을 손으로 움직여 값 확인")
+        print("[DRY] 모터 명령 없음 (zero-torque 상태요청만 송신) — "
+              "로봇을 손으로 움직여 값 확인")
         for _ in range(int(duration / C.CONTROL_DT)):
             t0 = time.monotonic()
             if _stdin_pressed():
                 break
+            self.robot.send_poll()
             state = self.robot.read_state()
             out = self._step_estimator(state, C.CONTROL_DT)
             now = time.monotonic()
@@ -218,6 +257,7 @@ def main():
         policy = Policy(args.policy)
 
     dep = Deployer(robot, LinearKFStateEstimator(), args)
+    _flush_stdin()
     try:
         dep._estimator_warmup()
         if args.mode == "dry-run":

@@ -69,6 +69,34 @@ pip install -r requirements.txt
 python3 selftest.py   # 로봇 없이 통과해야 함
 ```
 
+### 2-b. Go1 온보드 NX 에서 직접 실행하는 경우 (오프라인 빌드, 2026-08-01 적용됨)
+
+NX(192.168.123.15)는 Python 3.6.9 에 인터넷이 없습니다. SDK 에 동봉된
+프리빌트 `robot_interface.cpython-38-*.so` 는 3.8 전용이라 import 되지 않으므로,
+온보드 SDK 소스로 3.6용을 빌드합니다 (pybind11 동봉, 이미 NX 에 적용 완료):
+
+```bash
+cd ~/go1_ws/src/unitree_ros_to_real/unitree_legged_sdk/python_wrapper
+# python_interface.cpp 의 `#include <msgpack.hpp>` 는 실제로 사용되지 않는데
+# NX 에 msgpack 헤더가 없어 빌드를 막습니다 → 주석 처리 (NX 에 적용됨)
+mkdir -p build && cd build && cmake .. && make -j4
+# → ../../lib/python/arm64/robot_interface.cpython-36m-aarch64-linux-gnu.so
+```
+
+`robot_io.py` 가 이 경로를 자동으로 sys.path 에 추가하므로 PYTHONPATH 설정 없이
+`import robot_interface` 가 됩니다 (다른 위치라면 `UNITREE_SDK_PYTHON_PATH` 로 지정).
+
+⚠️ NX 에서 SDK low-level UDP 를 쓰려면 ROS 브리지(`ros_udp lowlevel` 노드)가
+떠 있으면 안 됩니다. ros_udp 는 `/low_cmd` 퍼블리셔가 없어도 500 Hz 로
+zero-torque 명령을 계속 송신하므로, sdk_deploy 와 동시에 켜면 MCU 가 두
+명령 스트림을 번갈아 받아 모터가 덜덜 떨립니다 (실측). 한 번에 하나만.
+
+NX 에는 onnxruntime/torch 가 없지만, `model/phase1/policy_numpy.npz`
+(순수 NumPy 백엔드, `scripts/export_policy_numpy.py` 로 변환)를 쓰면
+`--mode hang/walk` 도 온보드에서 실행할 수 있습니다. 모델 옆
+`reference_io.json` (개발 PC onnxruntime 출력 6쌍)과 자동 대조하는
+self-test 가 로드 시 실행되어, 불일치 시 모터를 건드리기 전에 중단합니다.
+
 ## 3. 로봇을 low-level 모드로 전환
 
 1. 로봇을 **하네스에 매달거나** 들 수 있는 상태로 전원 인가, 기립 대기.
@@ -84,19 +112,22 @@ python3 selftest.py   # 로봇 없이 통과해야 함
 # (0) SDK 없이 코드 경로만 검증
 python3 deploy.py --mode dry-run --mock
 
-# (1) 로봇 매단 채, 송신 없이 센서 방향/순서 검증.
-#     각 관절을 손으로 굽혀보며 q 의 해당 인덱스와 부호가 맞는지,
-#     로봇을 손으로 밀며 v_body 부호가 맞는지 확인.
+# (1) 로봇 매단 채 센서 방향/순서 검증.
+#roslaunch lowlevel 안키고 해야됌.
 python3 deploy.py --mode dry-run
 
 # (2) 매단 채 기립 자세 추종 (정책 미실행)
+#roslaunch lowlevel 안키고 해야됌.
+#contact 이 0인지 확인
 python3 deploy.py --mode stand --duration 10
 
 # (3) 매단 채 정책 실행 (명령 0) — 발산 없이 안정적인 다리 움직임 확인
-python3 deploy.py --mode hang --policy model/phase1/policy.onnx
+python3 deploy.py --mode hang --policy model/phase1/policy_numpy.npz
 
 # (4) 지면에서 제자리 (명령 0 램프만) → 짧은 전진
-python3 deploy.py --mode walk --policy model/phase1/policy.onnx \
+#메달아두지만, stand 상태에서 발이 땅에 닿게.
+#contac이 3~4로 바뀌는 거 확인.
+python3 deploy.py --mode walk --policy model/phase1/policy_numpy.npz \
     --vx 0.3 --duration 10
 ```
 

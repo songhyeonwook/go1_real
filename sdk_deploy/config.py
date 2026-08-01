@@ -101,7 +101,12 @@ FOOT_RADIUS = 0.02
 # ---------------------------------------------------------------------------
 # 상태 추정기 (legged_control / MIT Mini-Cheetah linear KF 계열 기본값)
 # ---------------------------------------------------------------------------
-CONTACT_FORCE_THRESHOLD = 20.0   # footForce (N 근사) 접촉 판정
+CONTACT_FORCE_THRESHOLD = 20.0   # footForce (N 근사) 접촉 판정 — bias 차감 후 값 기준
+# Go1 발 압력 센서는 무부하에서도 발마다 큰 오프셋을 출력합니다.
+# 실측 (2026-08-01, 로봇을 하네스에 매달아 완전 무부하, dry-run ff, FL FR RL RR):
+#   [125, 114, 114, 116]  ← 이 값이면 임계 20 으로는 항상 contact=4
+# 재측정 방법: 로봇을 매달고 `deploy.py --mode dry-run` 의 ff 값을 그대로 적기.
+FOOT_FORCE_BIAS = np.array([125.0, 114.0, 114.0, 116.0])  # FL, FR, RL, RR
 EST_NOISE_P_IMU = 0.02           # process: 위치
 EST_NOISE_V_IMU = 0.02           # process: 속도
 EST_NOISE_P_FOOT = 0.002         # process: 발 위치

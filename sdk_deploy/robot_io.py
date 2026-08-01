@@ -10,7 +10,7 @@ SDK 순서 변환은 여기서만 일어납니다.
   * send_damping() 은 Kp=0 / Kd 만 남기는 무릎꿇기(제동) 모드
 """
 
-import dataclasses
+import os
 
 import numpy as np
 
@@ -21,23 +21,56 @@ _POS_STOP_F = 2.146e9
 _VEL_STOP_F = 16000.0
 
 
-@dataclasses.dataclass
 class RobotState:
-    """Isaac 순서로 정리된 로봇 상태 스냅샷."""
-    q: np.ndarray            # (12,) 관절각 (Isaac 순서)
-    dq: np.ndarray           # (12,) 관절 각속도
-    quat_wxyz: np.ndarray    # (4,) IMU 자세
-    gyro: np.ndarray         # (3,) body 각속도
-    accel: np.ndarray        # (3,) 가속도계 비력
-    foot_force: np.ndarray   # (4,) FL,FR,RL,RR
-    rpy: np.ndarray          # (3,) roll, pitch, yaw
+    """Isaac 순서로 정리된 로봇 상태 스냅샷.
+
+    dataclass 를 쓰지 않는 이유: Go1 온보드 NX 는 Python 3.6.9 라
+    dataclasses 표준 모듈(3.7+)이 없습니다.
+    """
+
+    __slots__ = ('q', 'dq', 'quat_wxyz', 'gyro', 'accel', 'foot_force', 'rpy')
+
+    def __init__(self, q, dq, quat_wxyz, gyro, accel, foot_force, rpy):
+        self.q = q                    # (12,) 관절각 (Isaac 순서)
+        self.dq = dq                  # (12,) 관절 각속도
+        self.quat_wxyz = quat_wxyz    # (4,) IMU 자세
+        self.gyro = gyro              # (3,) body 각속도
+        self.accel = accel            # (3,) 가속도계 비력
+        self.foot_force = foot_force  # (4,) FL,FR,RL,RR
+        self.rpy = rpy                # (3,) roll, pitch, yaw
+
+
+def _import_robot_interface():
+    """unitree_legged_sdk 파이썬 바인딩을 찾아 import 합니다.
+
+    PYTHONPATH 에 없으면 알려진 위치를 차례로 sys.path 에 추가해 재시도:
+      1) $UNITREE_SDK_PYTHON_PATH
+      2) ~/go1_ws/src/unitree_ros_to_real/unitree_legged_sdk/lib/python/<arch>
+         (Go1 온보드 NX 의 SDK 위치 — cpython-36m .so 는 여기서 빌드, README 참고)
+    """
+    try:
+        import robot_interface as sdk
+        return sdk
+    except ImportError:
+        pass
+    import platform
+    import sys
+    arch = 'arm64' if platform.machine() == 'aarch64' else 'amd64'
+    candidates = [os.environ.get('UNITREE_SDK_PYTHON_PATH')]
+    candidates.append(os.path.expanduser(
+        '~/go1_ws/src/unitree_ros_to_real/unitree_legged_sdk/lib/python/' + arch))
+    for path in candidates:
+        if path and os.path.isdir(path) and path not in sys.path:
+            sys.path.append(path)
+    import robot_interface as sdk
+    return sdk
 
 
 class Go1Interface:
     """실물 Go1 low-level UDP 인터페이스."""
 
     def __init__(self, power_protect: int = C.POWER_PROTECT_LEVEL):
-        import robot_interface as sdk  # unitree_legged_sdk python wrapper
+        sdk = _import_robot_interface()  # unitree_legged_sdk python wrapper
 
         self._sdk = sdk
         self._power_protect = int(power_protect)
@@ -101,6 +134,24 @@ class Go1Interface:
         self.udp.SetSend(self.cmd)
         self.udp.Send()
 
+    def send_poll(self) -> None:
+        """상태 회신만 유도하는 zero-torque 패킷 송신.
+
+        Go1 MCU 는 자기에게 패킷을 보낸 클라이언트에게만 low-level 상태를
+        회신합니다 (NX 실측: 송신 없이 Recv 만 하면 q/IMU/footForce 전부 0).
+        q=POS_STOP, dq=VEL_STOP, Kp=Kd=tau=0 이라 모터에는 아무 힘도 가하지
+        않습니다 — dry-run 과 추정기 워밍업에서 사용.
+        """
+        for j in range(12):
+            mc = self.cmd.motorCmd[j]
+            mc.q = _POS_STOP_F
+            mc.dq = _VEL_STOP_F
+            mc.Kp = 0.0
+            mc.Kd = 0.0
+            mc.tau = 0.0
+        self.udp.SetSend(self.cmd)
+        self.udp.Send()
+
 
 class MockGo1Interface:
     """SDK 없이 코드 경로를 검증하기 위한 mock.
@@ -121,7 +172,7 @@ class MockGo1Interface:
             quat_wxyz=np.array([1.0, 0.0, 0.0, 0.0]),
             gyro=np.zeros(3),
             accel=np.array([0.0, 0.0, 9.81]),
-            foot_force=np.full(4, 50.0),
+            foot_force=C.FOOT_FORCE_BIAS + 50.0,  # bias 차감 후 50 N → 4발 접촉
             rpy=np.zeros(3),
         )
 
@@ -136,3 +187,6 @@ class MockGo1Interface:
 
     def send_damping(self, kd: float = C.DAMPING_KD):
         self._dq = np.zeros(12)
+
+    def send_poll(self):
+        pass  # mock 은 read_state 가 항상 유효한 상태를 돌려줍니다

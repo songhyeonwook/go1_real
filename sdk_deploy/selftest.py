@@ -11,6 +11,13 @@
   6. mock 로봇으로 기립 + 정책 루프 전 구간 실행
 """
 
+import os
+
+# numpy 첫 import 전에 설정 (deploy.py 와 동일한 이유 — NX 에서 OpenBLAS
+# 멀티스레드가 루프를 50 ms 이상 밀리게 하는 것을 실측).
+os.environ.setdefault('OPENBLAS_NUM_THREADS', '1')
+os.environ.setdefault('OMP_NUM_THREADS', '1')
+
 import numpy as np
 
 import config as C

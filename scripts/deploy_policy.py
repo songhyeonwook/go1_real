@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
+import os
+
+# Must be set before numpy is imported. OpenBLAS's threaded GEMV stalls
+# 20-30 ms/step on the NX for these small matrices (thread sync dominates);
+# single-threaded runs at a stable 1.9 ms/step, well inside the 20 ms budget.
+os.environ.setdefault('OPENBLAS_NUM_THREADS', '1')
+os.environ.setdefault('OMP_NUM_THREADS', '1')
+
 import rospy
 import numpy as np
-import os
 import sys
 import json
 import time
