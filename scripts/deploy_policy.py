@@ -41,11 +41,16 @@ class Go1PolicyDeployNode:
         rospy.loginfo(f"Injured Leg Index set to: {self.injured_leg_idx} (-1 = Healthy)")
 
         # Gains settings.
-        # The sim used a learned ActuatorNetMLP (no explicit stiffness/damping), so there is
-        # no exact PD equivalent. Kp=25 / Kd=0.5 is the conventional Go1 position-control gain
-        # used for sim-to-real of this policy. Tune on hardware if the gait feels stiff/soft.
-        self.Kp = rospy.get_param('~Kp', 25.0)
+        # The distilled students were TRAINED with a PD actuator at Kp=20 / Kd=0.5
+        # (GO1_PD_KP/KD). Running the policy at a much stiffer gain (e.g. 60) was
+        # verified in Isaac Sim (sim_test/) to ride high and barely track the
+        # command; Kp=20 / Kd=0.5 reproduces the trained gait. The STAND phase can
+        # use a stiffer gain to get on its feet; keep the POLICY phase near training.
+        self.Kp = rospy.get_param('~Kp', 20.0)
         self.Kd = rospy.get_param('~Kd', 0.5)
+        # Stand-up phase gains (stiffer is fine here, only holds the default pose).
+        self.stand_Kp = rospy.get_param('~stand_Kp', 60.0)
+        self.stand_Kd = rospy.get_param('~stand_Kd', 1.0)
         self.enable_policy = rospy.get_param('~enable_policy', False)
         self.stand_up_time = rospy.get_param('~stand_up_time', 6.0)
         self.action_scale_multiplier = rospy.get_param('~action_scale_multiplier', 1.0)
@@ -54,33 +59,41 @@ class Go1PolicyDeployNode:
         self.shutdown_damp_dt = rospy.get_param('~shutdown_damp_dt', 0.02)
         rospy.loginfo(f"Policy execution enabled: {self.enable_policy}")
 
-        # Remapping Index: Unitree Hardware Order [FR, FL, RR, RL] -> Isaac Order [FL, FR, RL, RR]
-        # Isaac indices: FL(0,1,2), FR(3,4,5), RL(6,7,8), RR(9,10,11)
-        # Unitree indices: FR(0,1,2), FL(3,4,5), RR(6,7,8), RL(9,10,11)
-        self.U2I = [3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8]
-        self.I2U = [3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8]  # Involutive mapping
+        # Remapping Index: Unitree Hardware order -> Isaac Lab articulation order.
+        #
+        # The Isaac Lab Go1 articulation groups joints BY TYPE (all hips, then all
+        # thighs, then all calfs), NOT by leg. This was verified against the sim
+        # articulation joint_names via sim_test/ (deployment-parity test). The
+        # previous per-leg mapping scrambled every joint on hardware.
+        #   Isaac (articulation): FL_hip, FR_hip, RL_hip, RR_hip,
+        #                         FL_thigh, FR_thigh, RL_thigh, RR_thigh,
+        #                         FL_calf, FR_calf, RL_calf, RR_calf
+        #   Unitree (SDK):        FR(0,1,2), FL(3,4,5), RR(6,7,8), RL(9,10,11)
+        # joint_pos_isaac = joint_pos_unitree[U2I];  target_unitree = target_isaac[I2U].
+        # (U2I and I2U are inverse permutations, no longer involutive.)
+        self.U2I = [3, 0, 9, 6, 4, 1, 10, 7, 5, 2, 11, 8]
+        self.I2U = [1, 5, 9, 0, 4, 8, 3, 7, 11, 2, 6, 10]
 
-        # Default Joint Positions in Isaac Order
-        # Order: FL_hip, FL_thigh, FL_calf, FR_hip, FR_thigh, FR_calf, RL_hip, RL_thigh, RL_calf, RR_hip, RR_thigh, RR_calf
+        # Default Joint Positions in Isaac articulation (type-grouped) order.
+        # Order: [FL_hip, FR_hip, RL_hip, RR_hip,
+        #         FL_thigh, FR_thigh, RL_thigh, RR_thigh,
+        #         FL_calf, FR_calf, RL_calf, RR_calf]
         self.default_joint_pos = np.array([
-            0.1, 0.8, -1.5,   # FL
-            -0.1, 0.8, -1.5,  # FR
-            0.1, 1.0, -1.5,   # RL
-            -0.1, 1.0, -1.5   # RR
+            0.1, -0.1, 0.1, -0.1,     # hips  (L=+0.1, R=-0.1)
+            0.8, 0.8, 1.0, 1.0,       # thighs (front 0.8, rear 1.0)
+            -1.5, -1.5, -1.5, -1.5    # calfs
         ])
 
-        # Default joint limits in Isaac Order
+        # Default joint limits in Isaac articulation (type-grouped) order.
         self.joint_pos_min = np.array([
-            -1.0, -1.0, -2.7,  # FL
-            -1.0, -1.0, -2.7,  # FR
-            -1.0, -1.0, -2.7,  # RL
-            -1.0, -1.0, -2.7   # RR
+            -1.0, -1.0, -1.0, -1.0,   # hips
+            -1.0, -1.0, -1.0, -1.0,   # thighs
+            -2.7, -2.7, -2.7, -2.7    # calfs
         ])
         self.joint_pos_max = np.array([
-            1.0, 3.0, -0.8,  # FL
-            1.0, 3.0, -0.8,  # FR
-            1.0, 3.0, -0.8,  # RL
-            1.0, 3.0, -0.8   # RR
+            1.0, 1.0, 1.0, 1.0,       # hips
+            3.0, 3.0, 3.0, 3.0,       # thighs
+            -0.8, -0.8, -0.8, -0.8    # calfs
         ])
 
         # ==========================================
@@ -356,9 +369,14 @@ class Go1PolicyDeployNode:
         # Compute projected gravity
         projected_gravity = self.compute_projected_gravity(self.imu_quat)
 
-        # Base linear velocity: not directly measurable on the Go1. The policy was trained with it,
-        # so we feed zeros (best available estimate). This is a known sim-to-real approximation.
-        base_lin_vel = np.zeros(3, dtype=np.float32)
+        # Base linear velocity: not directly measurable on the Go1, but the student
+        # obs was trained WITH it. Feeding zeros makes the policy think it is
+        # stationary, so it over-accelerates (verified in Isaac Sim: ~0.9 m/s for a
+        # 0.5 m/s command). Using the velocity COMMAND as a proxy needs no extra
+        # sensing and reproduced near-ideal tracking in sim (~0.46 vs 0.5). If a
+        # real body-velocity estimate is available, feed it here instead.
+        # [vx_cmd, vy_cmd, 0] in the base frame.
+        base_lin_vel = np.array([self.cmd_vel[0], self.cmd_vel[1], 0.0], dtype=np.float32)
 
         # Assemble the 51-dim observation in the exact deployment_config.json layout order:
         # [0:3]   base_lin_vel
@@ -465,8 +483,8 @@ class Go1PolicyDeployNode:
                 cmd.motorCmd[idx].mode = 0x0A # Low-level joint mode
                 cmd.motorCmd[idx].q = current_target[idx]
                 cmd.motorCmd[idx].dq = 0.0
-                cmd.motorCmd[idx].Kp = 10.0 + alpha * (self.Kp - 10.0) # Gradually ramp stiffness
-                cmd.motorCmd[idx].Kd = 1.0
+                cmd.motorCmd[idx].Kp = 10.0 + alpha * (self.stand_Kp - 10.0) # ramp to stand stiffness
+                cmd.motorCmd[idx].Kd = self.stand_Kd
                 cmd.motorCmd[idx].tau = 0.0
 
             self.pub_low_cmd.publish(cmd)
@@ -575,9 +593,9 @@ class Go1PolicyDeployNode:
                 # 4. Apply Peg Leg Masking for action storing & publishing
                 # If a leg is physically pegged/locked, we don't allow the policy to compute commands for it
                 if self.injured_leg_idx >= 0:
-                    # Calf joint is locked at default splint lock position
-                    # In Isaac Order, calf joint is leg_idx * 3 + 2
-                    calf_idx = self.injured_leg_idx * 3 + 2
+                    # Calf joint is locked at default splint lock position.
+                    # In the type-grouped Isaac order, calf of leg L is at index 8 + L.
+                    calf_idx = 8 + self.injured_leg_idx
                     raw_actions[calf_idx] = 0.0 # Action mask = 0 ensures target = default joint position
 
                 # Store last action for next policy step
@@ -608,9 +626,11 @@ class Go1PolicyDeployNode:
 
                 # 8. Special overrides for the injured leg physically
                 if self.injured_leg_idx >= 0:
-                    # Get index of injured calf in Unitree array
-                    isaac_calf_idx = self.injured_leg_idx * 3 + 2
-                    unitree_calf_idx = self.I2U[isaac_calf_idx]
+                    # Get index of injured calf in the Unitree motor array.
+                    # calf of leg L is at isaac index 8+L; the isaac->unitree slot
+                    # lookup is the inverse of I2U, which is U2I.
+                    isaac_calf_idx = 8 + self.injured_leg_idx
+                    unitree_calf_idx = self.U2I[isaac_calf_idx]
 
                     # Options for injured leg motor command:
                     # Setting Kp=0, Kd=0 effectively powers OFF the joint so the user can lock it physically!

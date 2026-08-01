@@ -1,0 +1,22 @@
+{
+  "checkpoint": "/home/shw/go1_compar/models/phase1_mlp_s42/model_5999.pt",
+  "phase": "teacher",
+  "agent": "rsl_rl_teacher_mlp_cfg_entry_point",
+  "task": "Template-Go1-Lab-v0",
+  "jit": "/home/shw/go1_compar/models/phase1_mlp_s42/exported/policy.pt",
+  "onnx": "/home/shw/go1_compar/models/phase1_mlp_s42/exported/policy.onnx",
+  "is_recurrent": false,
+  "observation_shape": [
+    1
+  ],
+  "action_shape": [
+    1,
+    12
+  ],
+  "onnx_inputs": [
+    "obs"
+  ],
+  "onnx_outputs": [
+    "actions"
+  ]
+}

@@ -88,3 +88,11 @@ rosrun go1_real deploy_policy.py _injured_leg_idx:=1 _model_path:=/home/shw/go1_
 * **정책 구조:** Feed-forward ActorCritic MLP (hidden `[512, 256, 128]`, `elu`) — 순환(LSTM) 아님
 * **base_lin_vel 주의:** 실제 Go1는 몸체 선속도를 직접 측정할 수 없어 0으로 입력합니다 (sim-to-real 근사).
 * **Healthy 전용:** 이 정책은 정상 보행만 학습되어 다친 다리에 맞춰 보행을 적응시키지 않습니다. `injured_leg_idx`를 지정하면 해당 종아리 모터만 물리적으로 풀어(스플린트 고정용) 줄 뿐이며, 실제 부상 적응은 Phase-2/Student 정책이 필요합니다.
+
+
+# 실험 순서
+python3 deploy.py --mode dry-run --mock        # (0) SDK 없이 코드 경로만
+python3 deploy.py --mode dry-run               # (1) 매단 채 송신 없이 센서 검증 ← 가장 중요
+python3 deploy.py --mode stand --duration 10   # (2) 매단 채 기립 추종
+python3 deploy.py --mode hang --policy model/phase1/policy.onnx   # (3) 매단 채 정책 실행
+python3 deploy.py --mode walk --policy model/phase1/policy.onnx --vx 0.3 --duration 10  # (4) 지면

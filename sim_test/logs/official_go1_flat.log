@@ -1,0 +1,399 @@
+MESA: warning: Driver does not support the 0x7d67 PCI ID.
+MESA: warning: Driver does not support the 0x7d67 PCI ID.
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /home/shw/IsaacLab/apps/isaaclab.python.rendering.kit
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.locomotion.velocity.config.go1.rough_env_cfg:UnitreeGo1RoughEnvCfg
+[INFO]: Parsing configuration from: isaaclab_tasks.manager_based.locomotion.velocity.config.go1.agents.rsl_rl_ppo_cfg:UnitreeGo1RoughPPORunnerCfg
+[INFO] forced plane terrain
+
+[36m======================================================================================[0m
+[36m[1m[INFO][IsaacLab]: Logging to file: /tmp/isaaclab/logs/isaaclab_2026-07-26_23-57-29.log[0m
+[36m======================================================================================[0m
+
+[33m23:57:29 [simulation_context.py] WARNING: The `enable_external_forces_every_iteration` parameter in the PhysxCfg is set to False. If you are experiencing noisy velocities, consider enabling this flag. You may need to slightly increase the number of velocity iterations (setting it to 1 or 2 rather than 0), together with this flag, to improve the accuracy of velocity updates.[0m
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : 42
+	Physics step-size     : 0.005
+	Rendering step-size   : 0.02
+	Environment step-size : 0.02
+[33m23:57:30 [terrain_importer.py] WARNING: Visual material specified for ground plane but no diffuse color found. Using default color: (0.0, 0.0, 0.0)[0m
+[INFO]: Time taken for scene creation : 1.089107 seconds
+[INFO]: Scene manager:  <class InteractiveScene>
+	Number of environments: 1
+	Environment spacing   : 2.5
+	Source prim name      : /World/envs/env_0
+	Global prim paths     : ['/World/ground']
+	Replicate physics     : True
+[INFO]: Starting the simulation. This may take a few seconds. Please wait...
+[INFO]: Time taken for simulation start : 1.742899 seconds
+[33m23:57:32 [velocity_command.py] WARNING: The velocity command has the 'ranges.heading' attribute set to '(0.0, 0.0)' but the heading command is not active. Consider setting the flag for the heading command to True.[0m
+/home/shw/miniconda3/envs/isaac/lib/python3.11/site-packages/gymnasium/wrappers/rendering.py:293: UserWarning: [33mWARN: Overwriting existing videos at /tmp/claude-1000/-home-shw-go1-real/b6df1a1c-8655-403c-8299-ecb5b9ea2f2b/scratchpad/sim_test_videos/reference_pkp60 folder (try specifying a different `video_folder` for the `RecordVideo` wrapper if this is not desired)[0m
+  logger.warn(
+Loading user config located at: '/home/shw/miniconda3/envs/isaac/lib/python3.11/site-packages/isaacsim/kit/data/Kit/Isaac-Sim/5.1/user.config.json'
+[Info] [carb] Logging to file: /home/shw/miniconda3/envs/isaac/lib/python3.11/site-packages/isaacsim/kit/logs/Kit/Isaac-Sim/5.1/kit_20260726_235657.log
+2026-07-26T14:56:57Z [177ms] [Warning] [carb.windowing-glfw.gamepad] Joystick with unknown remapping detected (will be ignored):  Keychron Keychron Q11 System Control [0300000034340000e001000011010000]
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 580.173.02    | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA RTX PRO 6000 Blackwell .. | Yes: 0 |     | 97887   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2bb1      | 95a2e70a.. |
+|     |                                  |        |     |            | 2         |            |
+|=============================================================================================|
+| OS: 22.04.5 LTS (Jammy Jellyfish) ubuntu, Version: 22.04.5, Kernel: 6.8.0-124-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101004 (1.21.1.4)
+| Processor: Intel(R) Core(TM) Ultra 7 270K Plus
+| Cores: 24 | Logical Cores: 24
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 31554 | Free Memory: 14512
+| Total Page/Swap (MB): 0 | Free Page/Swap: 0
+|---------------------------------------------------------------------------------------------|
+2026-07-26T14:56:57Z [791ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+2026-07-26T14:56:57Z [801ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-07-26T14:57:19Z [22,249ms] [Warning] [omni.log] Source: omni.hydra was already registered.
+2026-07-26T14:57:19Z [22,456ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [omni::physx::IPhysxBenchmarks v1.0] (plugin: <default plugin>), by client: omni.physics.physx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+2026-07-26T14:57:19Z [22,500ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+2026-07-26T14:57:21Z [24,250ms] [Warning] [pxr.Semantics] pxr.Semantics is deprecated - please use Semantics instead
+2026-07-26T14:57:21Z [24,798ms] [Warning] [omni.graph.core.plugin] Found duplicate of category 'Replicator' - was 'Annotators', adding 'Fabric Reader'
+2026-07-26T14:57:21Z [24,798ms] [Warning] [omni.graph.core.plugin] Category 'Replicator' not accepted on node type 'omni.replicator.core.FabricReader' in extension 'omni.replicator.core'
+2026-07-26T14:57:21Z [24,799ms] [Warning] [omni.replicator.core.scripts.extension] No material configuration file, adding configuration to material settings directly.
+2026-07-26T14:57:26Z [29,549ms] [Warning] [omni.kvdb.plugin] Disabling key-value database because another kit process is locking it
+2026-07-26T14:57:26Z [29,570ms] [Warning] [omni.fabric.plugin] Warning: attribute viewportHandle not found for bucket id 9
+
+2026-07-26T14:57:33Z [36,457ms] [Warning] [omni.physx.fabric.plugin] FabricManager::initializePointInstancer mismatched prototypes on point instancer: /Visuals/Command/velocity_goal.
+2026-07-26T14:57:33Z [36,457ms] [Warning] [omni.physx.fabric.plugin] FabricManager::initializePointInstancer mismatched prototypes on point instancer: /Visuals/Command/velocity_current.
+/home/shw/miniconda3/envs/isaac/lib/python3.11/site-packages/rsl_rl/utils/utils.py:244: UserWarning: The observation configuration dictionary 'obs_groups' must contain the 'policy' key. As an observation group with the name 'policy' was found, this is assumed to be the observation set. Consider adding the 'policy' key to the 'obs_groups' dictionary for clarity. This behavior will be removed in a future version.
+  warnings.warn(
+/home/shw/miniconda3/envs/isaac/lib/python3.11/site-packages/rsl_rl/utils/utils.py:290: UserWarning: The observation configuration dictionary 'obs_groups' must contain the 'critic' key. As the configuration for 'critic' is missing, the observations from the 'policy' set are used. Consider adding the 'critic' key to the 'obs_groups' dictionary for clarity. This behavior will be removed in a future version.
+  warnings.warn(
+[INFO] Command Manager:  <CommandManager> contains 1 active terms.
++------------------------------------------------+
+|              Active Command Terms              |
++-------+---------------+------------------------+
+| Index | Name          |          Type          |
++-------+---------------+------------------------+
+|   0   | base_velocity | UniformVelocityCommand |
++-------+---------------+------------------------+
+
+[INFO] Event Manager:  <EventManager> contains 2 active terms.
++--------------------------------------+
+| Active Event Terms in Mode: 'startup' |
++----------+---------------------------+
+|  Index   | Name                      |
++----------+---------------------------+
+|    0     | physics_material          |
+|    1     | add_base_mass             |
++----------+---------------------------+
++---------------------------------------+
+|  Active Event Terms in Mode: 'reset'  |
++--------+------------------------------+
+| Index  | Name                         |
++--------+------------------------------+
+|   0    | base_external_force_torque   |
+|   1    | reset_base                   |
+|   2    | reset_robot_joints           |
++--------+------------------------------+
+
+[INFO] Recorder Manager:  <RecorderManager> contains 0 active terms.
++---------------------+
+| Active Recorder Terms |
++-----------+---------+
+|   Index   | Name    |
++-----------+---------+
++-----------+---------+
+
+[INFO] Action Manager:  <ActionManager> contains 1 active terms.
++------------------------------------+
+|  Active Action Terms (shape: 12)   |
++--------+-------------+-------------+
+| Index  | Name        |   Dimension |
++--------+-------------+-------------+
+|   0    | joint_pos   |          12 |
++--------+-------------+-------------+
+
+[INFO] Observation Manager: <ObservationManager> contains 1 groups.
++----------------------------------------------------------+
+| Active Observation Terms in Group: 'policy' (shape: (235,)) |
++-----------+--------------------------------+-------------+
+|   Index   | Name                           |    Shape    |
++-----------+--------------------------------+-------------+
+|     0     | base_lin_vel                   |     (3,)    |
+|     1     | base_ang_vel                   |     (3,)    |
+|     2     | projected_gravity              |     (3,)    |
+|     3     | velocity_commands              |     (3,)    |
+|     4     | joint_pos                      |    (12,)    |
+|     5     | joint_vel                      |    (12,)    |
+|     6     | actions                        |    (12,)    |
+|     7     | height_scan                    |    (187,)   |
++-----------+--------------------------------+-------------+
+
+[INFO] Termination Manager:  <TerminationManager> contains 2 active terms.
++---------------------------------+
+|     Active Termination Terms    |
++-------+--------------+----------+
+| Index | Name         | Time Out |
++-------+--------------+----------+
+|   0   | time_out     |   True   |
+|   1   | base_contact |  False   |
++-------+--------------+----------+
+
+[INFO] Reward Manager:  <RewardManager> contains 10 active terms.
++-----------------------------------------+
+|           Active Reward Terms           |
++-------+----------------------+----------+
+| Index | Name                 |   Weight |
++-------+----------------------+----------+
+|   0   | track_lin_vel_xy_exp |      1.5 |
+|   1   | track_ang_vel_z_exp  |     0.75 |
+|   2   | lin_vel_z_l2         |     -2.0 |
+|   3   | ang_vel_xy_l2        |    -0.05 |
+|   4   | dof_torques_l2       |  -0.0002 |
+|   5   | dof_acc_l2           | -2.5e-07 |
+|   6   | action_rate_l2       |    -0.01 |
+|   7   | feet_air_time        |     0.01 |
+|   8   | flat_orientation_l2  |      0.0 |
+|   9   | dof_pos_limits       |      0.0 |
++-------+----------------------+----------+
+
+[INFO] Curriculum Manager:  <CurriculumManager> contains 0 active terms.
++----------------------+
+| Active Curriculum Terms |
++-----------+----------+
+|   Index   | Name     |
++-----------+----------+
++-----------+----------+
+
+Creating window for environment.
+[INFO]: Completed setting up the environment...
+--------------------------------------------------------------------------------
+Resolved observation sets: 
+	 policy :  ['policy']
+	 critic :  ['policy']
+--------------------------------------------------------------------------------
+ActorCritic.__init__ got unexpected arguments, which will be ignored: ['state_dependent_std']
+Actor MLP: MLP(
+  (0): Linear(in_features=235, out_features=512, bias=True)
+  (1): ELU(alpha=1.0)
+  (2): Linear(in_features=512, out_features=256, bias=True)
+  (3): ELU(alpha=1.0)
+  (4): Linear(in_features=256, out_features=128, bias=True)
+  (5): ELU(alpha=1.0)
+  (6): Linear(in_features=128, out_features=12, bias=True)
+)
+Critic MLP: MLP(
+  (0): Linear(in_features=235, out_features=512, bias=True)
+  (1): ELU(alpha=1.0)
+  (2): Linear(in_features=512, out_features=256, bias=True)
+  (3): ELU(alpha=1.0)
+  (4): Linear(in_features=256, out_features=128, bias=True)
+  (5): ELU(alpha=1.0)
+  (6): Linear(in_features=128, out_features=1, bias=True)
+)
+[INFO] loading reference checkpoint: /home/shw/go1_peg/scripts/rsl_rl/.pretrained_checkpoints/rsl_rl/Isaac-Velocity-Rough-Unitree-Go1-v0/checkpoint.pt
+[WARN] no deploy artifact in /tmp/claude-1000/-home-shw-go1-real/b6df1a1c-8655-403c-8299-ecb5b9ea2f2b/scratchpad ([Errno 2] No such file or directory: '/tmp/claude-1000/-home-shw-go1-real/b6df1a1c-8655-403c-8299-ecb5b9ea2f2b/scratchpad/deployment_config.json'); reference mode = gait/behavior only, parity metrics skipped.
+[INFO] foot contact indices {'FL_foot': 4, 'FR_foot': 8, 'RL_foot': 12, 'RR_foot': 16}
+
+================= JOINT-ORDER AUDIT =================
+  sim articulation order : ['FL_hip', 'FR_hip', 'RL_hip', 'RR_hip', 'FL_thigh', 'FR_thigh', 'RL_thigh', 'RR_thigh', 'FL_calf', 'FR_calf', 'RL_calf', 'RR_calf']
+  deploy assumed  order  : ['FL_hip', 'FL_thigh', 'FL_calf', 'FR_hip', 'FR_thigh', 'FR_calf', 'RL_hip', 'RL_thigh', 'RL_calf', 'RR_hip', 'RR_thigh', 'RR_calf']
+  MATCH                  : False
+  !! MISMATCH: deploy_policy.py's hardcoded Isaac order differs from the sim
+     articulation order. On hardware this permutes every joint obs & action.
+     articulation index for each assumed slot: [0, 4, 8, 1, 5, 9, 2, 6, 10, 3, 7, 11]
+=====================================================
+
+[INFO] set actuator gains Kp=60.0 Kd=1.0
+[INFO] stand phase done (60 steps), base height 0.280
+[INFO] set actuator gains Kp=60.0 Kd=1.0
+
+================= GAIT =================
+{
+  "duty_FL_FR_RL_RR": [
+    0.781,
+    0.74,
+    0.629,
+    0.498
+  ],
+  "inphase_diagonal_trot": 0.782,
+  "inphase_lateral_pace": 0.332,
+  "inphase_frontrear_bound": 0.328,
+  "dominant_pattern": "trot",
+  "pattern_score": 0.782,
+  "step_freq_hz": 1.98
+}
+=======================================
+
+[INFO] wrote /tmp/claude-1000/-home-shw-go1-real/b6df1a1c-8655-403c-8299-ecb5b9ea2f2b/scratchpad/gait_diagram.png
+
+================= POSTURE (mean joint angle) =================
+  FL_thigh  mean    52.4°  default    45.8°  dev   +6.5°
+  RL_thigh  mean    88.6°  default    57.3°  dev  +31.3°
+  FL_calf   mean  -111.8°  default   -85.9°  dev  -25.9°
+  RL_calf   mean  -129.7°  default   -85.9°  dev  -43.8°
+  FR_thigh  mean    59.6°  default    45.8°  dev  +13.8°
+  RR_thigh  mean    66.3°  default    57.3°  dev   +9.0°
+  FR_calf   mean  -116.7°  default   -85.9°  dev  -30.8°
+  RR_calf   mean  -135.5°  default   -85.9°  dev  -49.5°
+=============================================================
+
+
+================= PARITY SUMMARY =================
+{
+  "model_dir": "/tmp/claude-1000/-home-shw-go1-real/b6df1a1c-8655-403c-8299-ecb5b9ea2f2b/scratchpad",
+  "backend": "numpy",
+  "drive_mode": "reference",
+  "stand_gains": [
+    60.0,
+    1.0
+  ],
+  "policy_gains": [
+    60.0,
+    1.0
+  ],
+  "linvel_source": "command",
+  "stand_steps": 60,
+  "stand_end_height": 0.2799983322620392,
+  "steps": 500,
+  "joint_order_match": false,
+  "sim_articulation_order": [
+    "FL_hip",
+    "FR_hip",
+    "RL_hip",
+    "RR_hip",
+    "FL_thigh",
+    "FR_thigh",
+    "RL_thigh",
+    "RR_thigh",
+    "FL_calf",
+    "FR_calf",
+    "RL_calf",
+    "RR_calf"
+  ],
+  "deploy_assumed_order": [
+    "FL_hip",
+    "FL_thigh",
+    "FL_calf",
+    "FR_hip",
+    "FR_thigh",
+    "FR_calf",
+    "RL_hip",
+    "RL_thigh",
+    "RL_calf",
+    "RR_hip",
+    "RR_thigh",
+    "RR_calf"
+  ],
+  "selftest_pass": null,
+  "selftest_err": null,
+  "net_export_err": {},
+  "obs_block_err": {
+    "base_lin_vel": {},
+    "base_ang_vel": {},
+    "projected_gravity": {},
+    "velocity_commands": {},
+    "joint_pos": {},
+    "joint_vel": {},
+    "last_action": {}
+  },
+  "base_height": {
+    "mean": 0.23241201359033584,
+    "max": 0.2820059359073639,
+    "min": 0.22391849756240845
+  },
+  "actual_vx": {
+    "mean": 0.49341335386037827,
+    "max": 0.5788866281509399,
+    "min": 0.12759584188461304
+  },
+  "cmd_vx_mean": 0.5,
+  "fell_any": false,
+  "first_fall_step": -1,
+  "gait": {
+    "duty_FL_FR_RL_RR": [
+      0.781,
+      0.74,
+      0.629,
+      0.498
+    ],
+    "inphase_diagonal_trot": 0.782,
+    "inphase_lateral_pace": 0.332,
+    "inphase_frontrear_bound": 0.328,
+    "dominant_pattern": "trot",
+    "pattern_score": 0.782,
+    "step_freq_hz": 1.98
+  },
+  "posture": {
+    "FL_hip": {
+      "mean_deg": 3.4,
+      "default_deg": 5.7,
+      "dev_deg": -2.3
+    },
+    "FR_hip": {
+      "mean_deg": 5.1,
+      "default_deg": -5.7,
+      "dev_deg": 10.8
+    },
+    "RL_hip": {
+      "mean_deg": -26.7,
+      "default_deg": 5.7,
+      "dev_deg": -32.4
+    },
+    "RR_hip": {
+      "mean_deg": 25.3,
+      "default_deg": -5.7,
+      "dev_deg": 31.0
+    },
+    "FL_thigh": {
+      "mean_deg": 52.4,
+      "default_deg": 45.8,
+      "dev_deg": 6.5
+    },
+    "FR_thigh": {
+      "mean_deg": 59.6,
+      "default_deg": 45.8,
+      "dev_deg": 13.8
+    },
+    "RL_thigh": {
+      "mean_deg": 88.6,
+      "default_deg": 57.3,
+      "dev_deg": 31.3
+    },
+    "RR_thigh": {
+      "mean_deg": 66.3,
+      "default_deg": 57.3,
+      "dev_deg": 9.0
+    },
+    "FL_calf": {
+      "mean_deg": -111.8,
+      "default_deg": -85.9,
+      "dev_deg": -25.9
+    },
+    "FR_calf": {
+      "mean_deg": -116.7,
+      "default_deg": -85.9,
+      "dev_deg": -30.8
+    },
+    "RL_calf": {
+      "mean_deg": -129.7,
+      "default_deg": -85.9,
+      "dev_deg": -43.8
+    },
+    "RR_calf": {
+      "mean_deg": -135.5,
+      "default_deg": -85.9,
+      "dev_deg": -49.5
+    }
+  }
+}
+=================================================
+
+[INFO] wrote /home/shw/go1_real/sim_test/logs/official_go1_flat.json
+2026-07-26T14:57:34Z [37,036ms] [Warning] [omni.physx.fabric.plugin] FabricManager::initializePointInstancer mismatched prototypes on point instancer: /Visuals/Command/velocity_current.
+2026-07-26T14:57:34Z [37,036ms] [Warning] [omni.physx.fabric.plugin] FabricManager::initializePointInstancer mismatched prototypes on point instancer: /Visuals/Command/velocity_goal.
+2026-07-26T14:57:34Z [37,163ms] [Warning] [omni.syntheticdata.plugin] OgnSdPostRenderVarToHost : rendervar copy from texture directly to host buffer is counter-performant. Please use copy from texture to device buffer first.
+2026-07-26T14:57:36Z [38,973ms] [Warning] [carb] Client gpu.foundation.plugin has acquired [gpu::unstable::IMemoryBudgetManagerFactory v0.1] 100 times. Consider accessing this interface with carb::getCachedInterface() (Performance warning)

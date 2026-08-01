@@ -8,3 +8,6 @@ __pycache__/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Isaac/Hydra run outputs
+outputs/
