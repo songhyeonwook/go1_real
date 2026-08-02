@@ -3,6 +3,101 @@
 논문의 세 패러다임 최종 체크포인트. **동일 환경·부상모델·RMA·PD·DR·viability floor**,
 **환부 다리 보상항만** 다름. (seed 42 대표 체크포인트)
 
+---
+
+# ★ 최신 배포 모델 — phase3_antalgic_s42 (2026-08-02)
+
+**관측이 R⁴⁸ → R⁵² 로 바뀌었습니다.** 아래 3-paradigm 절의 모델들과 관측 차원이
+다르므로 섞어 쓸 수 없습니다. 배포 스택(`sdk_deploy/observation.py`, `config.py`)은
+이미 52 기준(`POLICY_OBS_DIM = 52`)으로 갱신돼 있습니다.
+
+```
+antalgic/                             ← deploy_student.launch 가 찾는 위치
+  exported/policy_numpy.npz     ★ 실기에서 실제로 도는 것 (LSTM+MLP, obs 52)
+  exported/policy.pt|.onnx        개발 PC 검증·변환용
+  exported/policy_io.json         관측 레이아웃·아키텍처 메타데이터
+  antalgic_student_deploy.pt      원본 체크포인트 (model_3200)
+  params_student/                 학습 config (agent.yaml + env.yaml)
+
+sdk_deploy/model/phase3_antalgic_s42/  ← 버전 보관용 동일 사본
+```
+
+실행:
+```bash
+./scripts/sync_to_robot.sh --go
+roslaunch go1_real deploy_student.launch paradigm:=antalgic
+```
+(`deploy.launch` 는 Kp=30/Kd=1.5 와 action multiplier 0.2 를 강제하므로 student 에 쓰지 마세요.)
+
+## 관측 R⁵² 레이아웃
+
+| 구간 | 항목 | 차원 |
+|---|---|---|
+| 0:3 | base_lin_vel | 3 |
+| 3:6 | base_ang_vel | 3 |
+| 6:9 | projected_gravity | 3 |
+| 9:12 | velocity_commands | 3 |
+| 12:24 | joint_pos_rel | 12 |
+| 24:36 | joint_vel_rel | 12 |
+| 36:48 | last_actions | 12 |
+| **48:52** | **calf_pos_abs** (신규) | **4** |
+
+`calf_pos_abs = q_calf − NOMINAL_CALF` (FL,FR,RL,RR). 표준 `joint_pos_rel` 은
+`default_joint_pos` 를 빼는데, 부상 시 그 기준이 부목 각도로 바뀌어 **부목 길이 정보가
+관측에서 상쇄되어 사라집니다**. 이 채널은 부상 이전 nominal 을 기준으로 빼므로 각도가
+그대로 드러납니다 (부목 0.20 m → −0.66 rad, 0.30 m → −0.08 rad).
+
+## 실기 주의사항
+
+**LSTM 상태 리셋이 필수입니다.** phase1 은 feed-forward 라 상태가 없었지만 이 모델은
+순환입니다. 기립 후 정책을 켤 때와 중단 후 재개할 때 hidden/cell 을 0 으로 초기화하세요.
+안 하면 이전 세션의 기억이 남습니다.
+
+**부상 상태 파악에 1~4초 걸립니다.** 시뮬레이션 실측(LSTM hidden → 파라미터 선형 probe):
+
+| 리셋 후 경과 | 부목 길이 R² | 마찰 R² |
+|---|---|---|
+| 0~10 스텝 | 0.86 | −0.05 |
+| 50~100 | **0.96** | 0.59 |
+| 100~200 | 0.92 | **0.62** |
+| 500+ | 0.57 | 0.27 |
+
+부목 길이는 관절 엔코더로 즉시 읽히지만 **마찰은 미끄러짐을 관찰해야 하므로 1~4초의
+보행이 필요**합니다. 첫 몇 초 거동이 불안정할 수 있으니 안전 확보 후 시작하세요.
+
+**보행 양상**: 부상 다리 하중 duty 0.03~0.14 로 **3족 보행에 가깝습니다** — 발을 땅에
+대지만 체중은 거의 싣지 않습니다. 하중 경감 75~82%, 네 부상 조건 모두 명령 속도 95%+
+추종(0.3/0.6/1.0 m/s 검증). 실기에서도 "부상 다리를 들고 세 다리로 걷는" 모습이 예상됩니다.
+
+## 검증 완료
+
+`policy_numpy.npz` 와 PyTorch 원본(`policy.pt`)의 출력이 30스텝 시퀀스에서
+**최대 절대오차 9.5e-07** 로 일치합니다. NumPy 백엔드가 시뮬레이션과 동일하게 동작합니다.
+
+## 재생성 절차
+
+```bash
+# 1) JIT/ONNX 내보내기 (학습과 동일한 GO1_* 필수, 특히 GO1_ABS_JOINT_OBS=1)
+cd /home/shw/go1_compar/scripts/rsl_rl
+GO1_PHASE=student GO1_ABS_JOINT_OBS=1 GO1_INJURY_ONEHOT=1 GO1_PROPRIO_ONLY=1 \
+GO1_FLAT_TERRAIN=1 GO1_PHASE2_GAIT_TUNING=1 GO1_PD_ACTUATOR=1 \
+python play.py --task Template-Go1-Lab-v0 --agent rsl_rl_distill_cfg_entry_point \
+  --checkpoint <student model_N.pt> --headless --num_envs 1
+# exported/ 생성 직후 Ctrl+C (play 는 시뮬 루프를 계속 돕니다)
+
+# 2) NumPy 번들 변환 (개발 PC, onnx 필요)
+python3 /home/shw/go1_real/scripts/export_policy_numpy.py <run>/exported/policy.onnx
+```
+
+**출처**: student `phase3_ws_antalgic_s42/model_3200` ←
+teacher `phase2_speedfix_antalgic_s42/model_13950` ← phase1 `phase1_mlp_s42/model_5999`
+
+---
+
+# (이전) R⁴⁸ 3-paradigm 세트
+
+아래는 `calf_pos_abs` 도입 이전의 R⁴⁸ 모델들입니다. **위 모델과 관측 차원이 다릅니다.**
+
 ## 파일
 
 ```

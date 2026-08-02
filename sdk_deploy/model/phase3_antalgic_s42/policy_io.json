@@ -1,0 +1,77 @@
+{
+  "name": "phase3_antalgic_s42 (speedfix teacher)",
+  "checkpoint": "/home/shw/go1_compar/scripts/rsl_rl/logs/rsl_rl/unitree_go1_rough_student/2026-08-02_12-50-24_phase3_ws_antalgic_s42/model_3200.pt",
+  "teacher": ".../2026-08-02_00-23-30_phase2_speedfix_antalgic_s42/model_13950.pt",
+  "phase": "student",
+  "agent": "rsl_rl_distill_cfg_entry_point",
+  "task": "Template-Go1-Lab-v0",
+  "is_recurrent": true,
+  "rnn": {
+    "type": "lstm",
+    "num_layers": 1,
+    "hidden_size": 256
+  },
+  "observation_dim": 52,
+  "action_dim": 12,
+  "observation_layout": [
+    {
+      "name": "base_lin_vel",
+      "dim": 3
+    },
+    {
+      "name": "base_ang_vel",
+      "dim": 3
+    },
+    {
+      "name": "projected_gravity",
+      "dim": 3
+    },
+    {
+      "name": "velocity_commands",
+      "dim": 3
+    },
+    {
+      "name": "joint_pos_rel",
+      "dim": 12
+    },
+    {
+      "name": "joint_vel_rel",
+      "dim": 12
+    },
+    {
+      "name": "last_actions",
+      "dim": 12
+    },
+    {
+      "name": "calf_pos_abs",
+      "dim": 4
+    }
+  ],
+  "npz_keys": [
+    "0_bias",
+    "0_weight",
+    "2_bias",
+    "2_weight",
+    "4_bias",
+    "4_weight",
+    "6_bias",
+    "6_weight",
+    "action_dim",
+    "arch",
+    "gate_order",
+    "lstm_bias_hh",
+    "lstm_bias_ih",
+    "lstm_hidden_size",
+    "lstm_input_size",
+    "lstm_weight_hh",
+    "lstm_weight_ih",
+    "num_mlp_layers",
+    "obs_dim"
+  ],
+  "notes": [
+    "student sees the policy group ONLY (52). privileged obs are teacher-side.",
+    "calf_pos_abs = q_calf - NOMINAL_CALF for (FL,FR,RL,RR); requires GO1_ABS_JOINT_OBS=1 training.",
+    "LSTM hidden/cell must be reset when the episode restarts (stand-up / re-enable)."
+  ],
+  "exported_utc": "2026-08-02T07:25:12.673322Z"
+}
