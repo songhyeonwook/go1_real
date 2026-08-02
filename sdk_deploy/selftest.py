@@ -127,7 +127,9 @@ def test_mock_deploy_loop():
 
     from deploy import Deployer
 
-    args = argparse.Namespace(mock=True, kp=C.KP, kd=C.KD)
+    args = argparse.Namespace(mock=True, kp=C.KP, kd=C.KD,
+                              lin_vel="cmd", vx_floor=0.0,
+                              stand_kp=C.STAND_KP, stand_kd=C.STAND_KD)
     robot = MockGo1Interface()
     dep = Deployer(robot, LinearKFStateEstimator(), args)
     dep._estimator_warmup(0.2)

@@ -22,11 +22,25 @@ antalgic/                             ← deploy_student.launch 가 찾는 위�
 sdk_deploy/model/phase3_antalgic_s42/  ← 버전 보관용 동일 사본
 ```
 
-실행:
+실행 (sdk_deploy — NX 온보드, 2026-08-02 하드웨어 파이프라인 검증본):
 ```bash
 ./scripts/sync_to_robot.sh --go
-roslaunch go1_real deploy_student.launch paradigm:=antalgic
+# NX 에서:
+cd ~/go1_ws/src/go1_real/sdk_deploy
+# 이 모델은 vx 0.3~1.0 로만 학습됨 → --vx-floor 0.3 으로 램프가 분포 밖을 통과하지 않게.
+# cmd=0 인 hang 도 분포 밖이므로 판단은 지면 walk 로 하세요.
+python3 deploy.py --mode walk --policy model/phase3_antalgic_s42/policy_numpy.npz \
+    --vx 0.3 --vx-floor 0.3 --lin-vel kf --duration 10
+# --lin-vel kf 필수 (2026-08-02 실기 확정): proxy(cmd)로는 관측상 추종 오차가 0 이라
+# 정책이 가속하지 않고 정지 고정점에 빠짐 (2회 재현). KF 피드백으로 보행 발화 확인.
 ```
+LSTM hidden 리셋은 `deploy.py` 가 정책 인계 시점에 자동으로 수행합니다.
+로드 시 `reference_io.json` 6쌍(제로 상태 에피소드)과 자동 대조하는 self-test 가 돌아
+불일치하면 모터를 건드리기 전에 중단합니다.
+
+⚠️ **ROS 경로(`deploy_student.launch`)는 아직 이 모델을 못 돌립니다** — `deploy_policy.py`
+의 관측 조립에 `calf_pos_abs` 4채널이 없고(R48 세대 그대로) 이 번들에는
+`deployment_config.json` 도 없습니다. ROS 로 돌리려면 그 두 가지를 먼저 추가해야 합니다.
 (`deploy.launch` 는 Kp=30/Kd=1.5 와 action multiplier 0.2 를 강제하므로 student 에 쓰지 마세요.)
 
 ## 관측 R⁵² 레이아웃

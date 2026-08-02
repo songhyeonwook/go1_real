@@ -1,7 +1,4 @@
 """실물 Go1 배포 상수 — 전부 phase1 체크포인트의 params/env.yaml 과 1:1 대응.
-
-이 파일의 값은 시뮬레이션 학습 설정에서 "옮겨 적은" 것이므로 임의로 바꾸면
-정책이 학습한 분포에서 벗어납니다. 출처는 각 항목 주석 참고.
 """
 
 import numpy as np
@@ -56,8 +53,20 @@ ACTION_SCALE = 0.25          # actions.joint_pos.scale
 CONTROL_DT = 0.02            # 정책 50 Hz
 KP = 20.0
 KD = 0.5
-STAND_KP = 30.0              # 기립 시퀀스 전용 (정책 게인보다 약간 단단하게)
+STAND_KP = 60.0
 STAND_KD = 1.0
+GAIN_BLEND_TIME = 3.0        # 정책 인계 후 STAND_KP → KP 블렌딩 시간 (s)
+
+# 정상 종료 시 천천히 주저앉기(lie_down) — damping 직행은 Kp=0 이라 뚝 떨어짐.
+# 비상정지/기울임 가드는 여전히 즉시 damping (제어된 하강이 낙하와 싸우면 안 됨).
+LIE_DOWN_POS = np.array([
+    0.1, -0.1, 0.1, -0.1,     # hips (기립 기본값 유지)
+    1.3, 1.3, 1.3, 1.3,       # thighs 접기
+    -2.6, -2.6, -2.6, -2.6,   # calves 접기 (soft limit -2.72 안쪽)
+])
+LIE_DOWN_TIME = 2.5
+LIE_DOWN_KP = 25.0
+LIE_DOWN_KD = 1.0
 DAMPING_KD = 2.0             # 비상/종료 시 damping 모드
 TORQUE_LIMIT = 23.7          # DCMotor effort_limit (모든 관절 동일하게 학습됨)
 

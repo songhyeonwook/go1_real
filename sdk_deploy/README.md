@@ -131,6 +131,38 @@ python3 deploy.py --mode walk --policy model/phase1/policy_numpy.npz \
     --vx 0.3 --duration 10
 ```
 
+phase3 LSTM student (obs 52, `model/phase3_antalgic_s42/`)는 **vx 0.3~1.0 로만
+학습**됐으므로 `--vx-floor 0.3` 으로 램프가 분포 밖(vx<0.3)을 통과하지 않게 합니다.
+같은 이유로 cmd=0 인 hang 은 이 모델에겐 분포 밖이라 움직임이 이상해도 모델
+결함이 아닙니다 — 지면 walk 로 판단하세요:
+```bash
+python3 deploy.py --mode walk --policy model/phase3_antalgic_s42/policy_numpy.npz \
+    --vx 0.3 --vx-floor 0.3 --lin-vel kf --duration 10
+```
+student 는 조립된 59차원 관측의 앞 52차원(policy 그룹)만 소비하고, LSTM
+hidden/cell 은 정책 인계 시점에 자동으로 0 리셋됩니다 (policy.py / deploy.py).
+
+### 실시간 부상 추정 표시 (injury probe)
+
+student 는 부상 정보를 입력받지 않고 LSTM hidden(256)에 스스로 추론합니다.
+그 hidden 을 해독하는 선형 probe(`injury_probe.npz`: W/b/names)를 모델 폴더에
+두면, walk/hang 중 1초마다 추정치가 표시됩니다:
+
+```
+v=(...) contact=3 cmd=(0.30,+0.00) |a|max=2.9
+    [EST] peg_FL=-0.02 peg_FR=+0.01 peg_RL=+0.03 peg_RR=+0.94 splint_len=+0.21 friction=+0.55
+```
+
+probe 는 정답 라벨이 있는 **시뮬 롤아웃으로만 학습 가능**합니다
+(`scripts/train_injury_probe.py`, ridge 닫힌형 — 입력 형식은 그 파일 docstring
+참고). `--log-npz` 는 실기 hidden 궤적도 `h` 키로 함께 저장하므로, 실기
+부상(부목) 실험 데이터에 probe 를 적용해 오프라인 검증도 할 수 있습니다.
+
+base_lin_vel 관측은 기본적으로 **속도 명령 proxy** 입니다 (`--lin-vel cmd`) —
+이 저장소의 모든 시뮬 검증(sim_test/deploy_core.py, ROS 스택)과 같은 방식입니다.
+온보드 KF 추정치는 실보행에서 과소추정이 확인돼(cmd 0.3 에서 0.02~0.15)
+관측으로는 기본 사용하지 않고 텔레메트리에만 씁니다. `--lin-vel kf` 로 전환 가능.
+
 속도 명령은 학습 분포로 클램프됩니다: vx 0–1.0 m/s, vy 0, wz ±0.15 rad/s
 (config.py `CMD_*_RANGE`, 학습 env.yaml 의 command ranges 와 동일).
 
