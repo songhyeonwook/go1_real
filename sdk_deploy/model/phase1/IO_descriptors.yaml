@@ -1,0 +1,422 @@
+observations:
+  policy:
+  - name: base_lin_vel
+    overloads:
+      clip: null
+      scale: null
+      history_length: 1
+      flatten_history_dim: true
+    extras:
+      units: m/s
+      axes:
+      - X
+      - Y
+      - Z
+      description: Root linear velocity in the asset's root frame.
+      modifiers: null
+    mdp_type: Observation
+    full_path: isaaclab.envs.mdp.observations.base_lin_vel
+    shape:
+    - 3
+    dtype: torch.float32
+    observation_type: RootState
+  - name: base_ang_vel
+    overloads:
+      clip: null
+      scale: null
+      history_length: 1
+      flatten_history_dim: true
+    extras:
+      units: rad/s
+      axes:
+      - X
+      - Y
+      - Z
+      description: Root angular velocity in the asset's root frame.
+      modifiers: null
+    mdp_type: Observation
+    full_path: isaaclab.envs.mdp.observations.base_ang_vel
+    shape:
+    - 3
+    dtype: torch.float32
+    observation_type: RootState
+  - name: projected_gravity
+    overloads:
+      clip: null
+      scale: null
+      history_length: 1
+      flatten_history_dim: true
+    extras:
+      units: m/s^2
+      axes:
+      - X
+      - Y
+      - Z
+      description: Gravity projection on the asset's root frame.
+      modifiers: null
+    mdp_type: Observation
+    full_path: isaaclab.envs.mdp.observations.projected_gravity
+    shape:
+    - 3
+    dtype: torch.float32
+    observation_type: RootState
+  - name: generated_commands
+    overloads:
+      clip: null
+      scale: null
+      history_length: 1
+      flatten_history_dim: true
+    extras:
+      description: The generated command from command term in the command manager
+        with the given name.
+      modifiers: null
+    mdp_type: Observation
+    full_path: isaaclab.envs.mdp.observations.generated_commands
+    shape:
+    - 3
+    dtype: torch.float32
+    observation_type: Command
+  - name: joint_pos_rel
+    overloads:
+      clip: null
+      scale: null
+      history_length: 1
+      flatten_history_dim: true
+    extras:
+      units: rad
+      description: 'The joint positions of the asset w.r.t. the default joint positions.
+        Note: Only the joints configured in :attr:`asset_cfg.joint_ids` will have
+        their positions returned.'
+      modifiers: null
+    mdp_type: Observation
+    full_path: isaaclab.envs.mdp.observations.joint_pos_rel
+    shape:
+    - 12
+    dtype: torch.float32
+    observation_type: JointState
+    joint_names:
+    - FL_hip_joint
+    - FR_hip_joint
+    - RL_hip_joint
+    - RR_hip_joint
+    - FL_thigh_joint
+    - FR_thigh_joint
+    - RL_thigh_joint
+    - RR_thigh_joint
+    - FL_calf_joint
+    - FR_calf_joint
+    - RL_calf_joint
+    - RR_calf_joint
+    joint_pos_offsets:
+    - 0.10000000149011612
+    - -0.10000000149011612
+    - 0.10000000149011612
+    - -0.10000000149011612
+    - 0.800000011920929
+    - 0.800000011920929
+    - 1.0
+    - 1.0
+    - -1.5
+    - -1.5
+    - -1.5
+    - -1.5
+  - name: joint_vel_rel
+    overloads:
+      clip: null
+      scale: null
+      history_length: 1
+      flatten_history_dim: true
+    extras:
+      units: rad/s
+      description: 'The joint velocities of the asset w.r.t. the default joint velocities.
+        Note: Only the joints configured in :attr:`asset_cfg.joint_ids` will have
+        their velocities returned.'
+      modifiers: null
+    mdp_type: Observation
+    full_path: isaaclab.envs.mdp.observations.joint_vel_rel
+    shape:
+    - 12
+    dtype: torch.float32
+    observation_type: JointState
+    joint_names:
+    - FL_hip_joint
+    - FR_hip_joint
+    - RL_hip_joint
+    - RR_hip_joint
+    - FL_thigh_joint
+    - FR_thigh_joint
+    - RL_thigh_joint
+    - RR_thigh_joint
+    - FL_calf_joint
+    - FR_calf_joint
+    - RL_calf_joint
+    - RR_calf_joint
+    joint_vel_offsets:
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - name: last_action
+    overloads:
+      clip: null
+      scale: null
+      history_length: 1
+      flatten_history_dim: true
+    extras:
+      description: The last input action to the environment. The name of the action
+        term for which the action is required. If None, the entire action tensor is
+        returned.
+      modifiers: null
+    mdp_type: Observation
+    full_path: isaaclab.envs.mdp.observations.last_action
+    shape:
+    - 12
+    dtype: torch.float32
+    observation_type: Action
+  - name: calf_pos_nominal_rel
+    overloads:
+      clip: null
+      scale: null
+      history_length: 1
+      flatten_history_dim: true
+    extras:
+      units: rad
+      joint_names:
+      - FL_calf_joint
+      - FR_calf_joint
+      - RL_calf_joint
+      - RR_calf_joint
+      description: calf 관절각 − 부상 전 nominal (FL, FR, RL, RR 순). joint_pos_rel 과 달리
+        부상 시 재작성되는 default 가 아니라 부상 전 nominal 기준이므로, 부목 lock 각이 관측에서 소거되지 않습니다 (GO1_ABS_JOINT_OBS=1
+        로 policy 그룹에 추가됨).
+      modifiers: null
+    mdp_type: Observation
+    full_path: go1_lab.tasks.manager_based.go1_lab.mdp.observations.calf_pos_nominal_rel
+    shape:
+    - 4
+    dtype: torch.float32
+    observation_type: JointState
+  privileged_obs:
+  - name: peg_leg_one_hot
+    overloads:
+      clip: null
+      scale: null
+      history_length: 0
+      flatten_history_dim: true
+    extras:
+      units: one_hot
+      element_order:
+      - FL
+      - FR
+      - RL
+      - RR
+      - injured_flag
+      description: 고장 다리 one-hot (FL, FR, RL, RR)와 부상 플래그를 반환합니다.
+      modifiers: null
+    mdp_type: Observation
+    full_path: go1_lab.tasks.manager_based.go1_lab.mdp.observations.peg_leg_one_hot
+    shape:
+    - 5
+    dtype: torch.float32
+    observation_type: PegLegPrivileged
+  - name: peg_leg_splint_length
+    overloads:
+      clip: null
+      scale: null
+      history_length: 0
+      flatten_history_dim: true
+    extras:
+      units: m
+      description: 부목 등가 길이(m)를 반환합니다. Go1 링크 기구학 기반.
+      modifiers: null
+    mdp_type: Observation
+    full_path: go1_lab.tasks.manager_based.go1_lab.mdp.observations.peg_leg_splint_length
+    shape:
+    - 1
+    dtype: torch.float32
+    observation_type: PegLegPrivileged
+  - name: peg_leg_foot_friction
+    overloads:
+      clip: null
+      scale: null
+      history_length: 0
+      flatten_history_dim: true
+    extras:
+      units: dimensionless
+      description: 고장 다리 부목 발 마찰 계수를 반환합니다 (정상 = 0, 부목 없음).
+      modifiers: null
+    mdp_type: Observation
+    full_path: go1_lab.tasks.manager_based.go1_lab.mdp.observations.peg_leg_foot_friction
+    shape:
+    - 1
+    dtype: torch.float32
+    observation_type: PegLegPrivileged
+actions:
+- name: joint_position_action
+  extras:
+    description: Joint action term that applies the processed actions to the articulation's
+      joints as position commands.
+  mdp_type: Action
+  full_path: isaaclab.envs.mdp.actions.joint_actions.JointPositionAction
+  shape:
+  - 12
+  dtype: torch.float32
+  action_type: JointAction
+  joint_names:
+  - FL_hip_joint
+  - FR_hip_joint
+  - RL_hip_joint
+  - RR_hip_joint
+  - FL_thigh_joint
+  - FR_thigh_joint
+  - RL_thigh_joint
+  - RR_thigh_joint
+  - FL_calf_joint
+  - FR_calf_joint
+  - RL_calf_joint
+  - RR_calf_joint
+  scale: 0.25
+  offset:
+  - 0.10000000149011612
+  - -0.10000000149011612
+  - 0.10000000149011612
+  - -0.10000000149011612
+  - 0.800000011920929
+  - 0.800000011920929
+  - 1.0
+  - 1.0
+  - -1.5
+  - -1.5
+  - -1.5
+  - -1.5
+  clip: null
+articulations:
+  robot:
+    joint_names:
+    - FL_hip_joint
+    - FR_hip_joint
+    - RL_hip_joint
+    - RR_hip_joint
+    - FL_thigh_joint
+    - FR_thigh_joint
+    - RL_thigh_joint
+    - RR_thigh_joint
+    - FL_calf_joint
+    - FR_calf_joint
+    - RL_calf_joint
+    - RR_calf_joint
+    default_joint_pos:
+    - 0.10000000149011612
+    - -0.10000000149011612
+    - 0.10000000149011612
+    - -0.10000000149011612
+    - 0.800000011920929
+    - 0.800000011920929
+    - 1.0
+    - 1.0
+    - -1.5
+    - -1.5
+    - -1.5
+    - -1.5
+    default_joint_vel:
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    default_joint_pos_limits:
+    - - -0.8629999160766602
+      - 0.8629999160766602
+    - - -0.8629999160766602
+      - 0.8629999160766602
+    - - -0.8629999160766602
+      - 0.8629999160766602
+    - - -0.8629999160766602
+      - 0.8629999160766602
+    - - -0.6859999299049377
+      - 4.500999450683594
+    - - -0.6859999299049377
+      - 4.500999450683594
+    - - -0.6859999299049377
+      - 4.500999450683594
+    - - -0.6859999299049377
+      - 4.500999450683594
+    - - -2.817999839782715
+      - -0.887999951839447
+    - - -2.817999839782715
+      - -0.887999951839447
+    - - -2.817999839782715
+      - -0.887999951839447
+    - - -2.817999839782715
+      - -0.887999951839447
+    default_joint_damping:
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    - 0.5
+    default_joint_stiffness:
+    - 20.0
+    - 20.0
+    - 20.0
+    - 20.0
+    - 20.0
+    - 20.0
+    - 20.0
+    - 20.0
+    - 20.0
+    - 20.0
+    - 20.0
+    - 20.0
+    default_joint_friction:
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    default_joint_armature:
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+scene:
+  physics_dt: 0.005
+  dt: 0.02
+  decimation: 4
