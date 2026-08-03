@@ -55,6 +55,12 @@ class DeployPolicyCore:
         -0.8, -0.8, -0.8, -0.8,
     ], dtype=np.float32)
 
+    # calf_pos_abs obs block (48:52, models trained with GO1_ABS_JOINT_OBS=1):
+    # absolute calf angle minus the nominal lock angle for (FL, FR, RL, RR).
+    # Healthy deployment: nominal == default calf angle.
+    CALF_IDS_ISAAC = [8, 9, 10, 11]
+    NOMINAL_CALF_POS = np.array([-1.5, -1.5, -1.5, -1.5], dtype=np.float32)
+
     def __init__(self, model_dir, backend="numpy"):
         """backend: 'numpy' (policy_numpy.npz) or 'torch' (policy.pt JIT)."""
         self.model_dir = model_dir
@@ -64,6 +70,7 @@ class DeployPolicyCore:
         self.obs_dim = 48
         self.action_scale = 0.25
         self.privileged_obs = np.zeros(0, dtype=np.float32)
+        self.use_calf_pos_abs = False
         self.is_recurrent = False
         self.rnn_num_layers = 1
         self.rnn_hidden_size = 256
@@ -78,26 +85,49 @@ class DeployPolicyCore:
     # ------------------------------------------------------------------ config
     def load_deployment_config(self):
         cfg_path = os.path.join(self.model_dir, "deployment_config.json")
-        with open(cfg_path, "r") as f:
-            cfg = json.load(f)
+        if os.path.exists(cfg_path):
+            with open(cfg_path, "r") as f:
+                cfg = json.load(f)
 
-        self.obs_dim = int(cfg["input"]["obs_dim"])
-        self.action_scale = float(cfg["action"]["action_scale"])
+            self.obs_dim = int(cfg["input"]["obs_dim"])
+            self.action_scale = float(cfg["action"]["action_scale"])
 
-        defaults = cfg["input"].get("healthy_privileged_defaults", {})
-        priv = [e for e in cfg["input"]["layout"] if e.get("group") == "privileged_obs"]
-        priv.sort(key=lambda e: e["slice"][0])
-        if priv:
-            self.privileged_obs = np.array(
-                [float(defaults.get(e["name"], 0.0)) for e in priv], dtype=np.float32)
-        else:
-            self.privileged_obs = np.zeros(0, dtype=np.float32)
+            layout = cfg["input"]["layout"]
+            self.use_calf_pos_abs = any(
+                e.get("name") == "calf_pos_abs" for e in layout)
 
-        rec = cfg.get("recurrent")
-        if isinstance(rec, dict) and rec.get("is_recurrent"):
+            defaults = cfg["input"].get("healthy_privileged_defaults", {})
+            priv = [e for e in layout if e.get("group") == "privileged_obs"]
+            priv.sort(key=lambda e: e["slice"][0])
+            if priv:
+                self.privileged_obs = np.array(
+                    [float(defaults.get(e["name"], 0.0)) for e in priv],
+                    dtype=np.float32)
+            else:
+                self.privileged_obs = np.zeros(0, dtype=np.float32)
+
+            rec = cfg.get("recurrent")
+            if isinstance(rec, dict) and rec.get("is_recurrent"):
+                self.is_recurrent = True
+                self.rnn_num_layers = int(rec.get("rnn_num_layers", self.rnn_num_layers))
+                self.rnn_hidden_size = int(rec.get("rnn_hidden_size", self.rnn_hidden_size))
+            return
+
+        # Newer exports (phase3+) ship policy_io.json instead.
+        io_path = os.path.join(self.model_dir, "policy_io.json")
+        with open(io_path, "r") as f:
+            io = json.load(f)
+
+        self.obs_dim = int(io["observation_dim"])
+        names = [e.get("name") for e in io.get("observation_layout", [])]
+        self.use_calf_pos_abs = "calf_pos_abs" in names
+        self.privileged_obs = np.zeros(0, dtype=np.float32)
+
+        if io.get("is_recurrent"):
             self.is_recurrent = True
-            self.rnn_num_layers = int(rec.get("rnn_num_layers", self.rnn_num_layers))
-            self.rnn_hidden_size = int(rec.get("rnn_hidden_size", self.rnn_hidden_size))
+            rnn = io.get("rnn") or {}
+            self.rnn_num_layers = int(rnn.get("num_layers", self.rnn_num_layers))
+            self.rnn_hidden_size = int(rnn.get("hidden_size", self.rnn_hidden_size))
 
     # ------------------------------------------------------------------- model
     def load_policy(self):
@@ -149,6 +179,21 @@ class DeployPolicyCore:
             for b in getattr(self, "jit_state_buffers", []):
                 b.zero_()
 
+    # ----------------------------------------------------------------- injury
+    def set_injury(self, leg_idx, calf_lock_angle):
+        """Configure a splinted calf for leg_idx (0=FL 1=FR 2=RL 3=RR).
+
+        Mirrors what the training env does on injury: default_joint_pos of the
+        injured calf becomes the splint lock angle (drives the joint_pos_rel obs
+        block and the action offset), while the calf_pos_abs nominal (48:52)
+        intentionally stays at the HEALTHY default. On the real robot the
+        operator knows the splint angle, so this is deployable knowledge.
+        """
+        d = np.array(self.DEFAULT_JOINT_POS, dtype=np.float32, copy=True)
+        d[8 + int(leg_idx)] = float(calf_lock_angle)
+        self.DEFAULT_JOINT_POS = d  # instance attr shadows the class constant
+        self.injured_calf_id = 8 + int(leg_idx)
+
     # ------------------------------------------------------------ observations
     @staticmethod
     def compute_projected_gravity(q):
@@ -190,6 +235,9 @@ class DeployPolicyCore:
             joint_vel_isaac.astype(np.float32),
             np.asarray(last_action, dtype=np.float32),
         ]
+        if self.use_calf_pos_abs:
+            parts.append((joint_pos_isaac[self.CALF_IDS_ISAAC]
+                          - self.NOMINAL_CALF_POS).astype(np.float32))
         if self.privileged_obs.size > 0:
             parts.append(self.privileged_obs)
         return np.concatenate(parts)

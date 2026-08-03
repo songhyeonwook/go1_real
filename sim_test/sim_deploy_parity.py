@@ -155,10 +155,14 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg):
         env_cfg.observations.policy.enable_corruption = False
     except Exception:
         pass
-    # disable peg-leg injection so we test healthy locomotion first
-    for ev in ("randomize_peg_leg_actuation", "enforce_peg_leg"):
-        if hasattr(env_cfg.events, ev):
-            setattr(env_cfg.events, ev, None)
+    # Peg-leg events: stripped for healthy parity runs, KEPT when the caller
+    # pins an injury (GO1_PROB_PEG_LEG > 0) — otherwise injuries can never
+    # apply no matter what the env vars say.
+    inject_injury = float(os.getenv("GO1_PROB_PEG_LEG", "0") or 0) > 0.0
+    if not inject_injury:
+        for ev in ("randomize_peg_leg_actuation", "enforce_peg_leg"):
+            if hasattr(env_cfg.events, ev):
+                setattr(env_cfg.events, ev, None)
     if hasattr(env_cfg, "curriculum") and hasattr(env_cfg.curriculum, "peg_leg_difficulty"):
         env_cfg.curriculum.peg_leg_difficulty = None
 
@@ -193,7 +197,12 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg):
     env = gym.make(args_cli.task, cfg=env_cfg,
                    render_mode="rgb_array" if args_cli.video else None)
     if args_cli.video:
-        vsub = f"{args_cli.drive_mode}_pkp{int(args_cli.policy_kp)}"
+        # Include the report tag so per-condition videos don't overwrite each other.
+        _rtag = ""
+        if args_cli.report:
+            _rtag = os.path.splitext(os.path.basename(args_cli.report))[0]
+            _rtag = "_" + _rtag.replace("sim_parity_report_", "")
+        vsub = f"{args_cli.drive_mode}_pkp{int(args_cli.policy_kp)}{_rtag}"
         env = gym.wrappers.RecordVideo(
             env, video_folder=os.path.join(model_dir, "sim_test_videos", vsub),
             step_trigger=lambda s: s == 0,
@@ -239,6 +248,11 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg):
         else:
             raise
 
+    # 52-obs models (GO1_ABS_JOINT_OBS=1) carry a calf_pos_abs block at 48:52.
+    obs_blocks = list(OBS_BLOCKS)
+    if deploy is not None and getattr(deploy, "use_calf_pos_abs", False):
+        obs_blocks.append(("calf_pos_abs", 48, 52))
+
     # --- JOINT-ORDER AUDIT ------------------------------------------------------
     robot = env.unwrapped.scene["robot"]
     artic_names = list(robot.joint_names)
@@ -256,6 +270,37 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg):
             foot_idx.append(hit[0] if hit else -1)
         print(f"[INFO] foot contact indices {dict(zip(FEET, foot_idx))}")
     default_artic = robot.data.default_joint_pos[0].detach().cpu().numpy().astype(np.float32)
+
+    # --- initial reset + injury state (peg leg) ---------------------------------
+    # Reset-mode events (injury sampling, randomization) only fire on an actual
+    # env reset; stepping from the spawn state never triggers them. Reset first,
+    # then re-read default_joint_pos — an injured calf's default becomes the
+    # splint lock angle.
+    env.reset()
+    default_artic = robot.data.default_joint_pos[0].detach().cpu().numpy().astype(np.float32)
+    # The deploy pipeline is told the splint config (leg + lock angle) exactly
+    # as a robot operator would know it; the network must infer the rest
+    # (friction, dynamics) from proprioception.
+    uenv = env.unwrapped
+    injury_info = None
+    peg_idx_t = getattr(uenv, "_peg_leg_index", None)
+    if peg_idx_t is not None and int(peg_idx_t[0].item()) >= 0:
+        _leg = int(peg_idx_t[0].item())
+        injury_info = {
+            "leg": ["FL", "FR", "RL", "RR"][_leg],
+            "leg_idx": _leg,
+            "calf_lock_angle": float(uenv._peg_leg_calf_lock_angle[0].item()),
+            "splint_length": float(uenv._peg_leg_splint_length[0].item()),
+            "foot_friction": float(uenv._peg_leg_foot_friction[0].item()),
+        }
+        print(f"[INFO] INJURED: leg={injury_info['leg']} "
+              f"lock={injury_info['calf_lock_angle']:.3f} rad "
+              f"splint={injury_info['splint_length']:.3f} m "
+              f"friction={injury_info['foot_friction']:.2f}")
+        if deploy is not None:
+            deploy.set_injury(_leg, injury_info["calf_lock_angle"])
+    else:
+        print("[INFO] healthy env (no peg leg)")
     print("\n================= JOINT-ORDER AUDIT =================")
     print(f"  sim articulation order : {keys}")
     print(f"  deploy assumed  order  : {ASSUMED_ISAAC_ORDER}")
@@ -320,8 +365,11 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg):
         else:  # fixed
             joint_pos_rel = jp_artic - default_artic
             proj = DeployPolicyCore.compute_projected_gravity(quat)
-            obs = np.concatenate([blv, gyro, proj, cmd,
-                                  joint_pos_rel, jv_artic, last_raw_action])
+            parts = [blv, gyro, proj, cmd, joint_pos_rel, jv_artic, last_raw_action]
+            if getattr(deploy, "use_calf_pos_abs", False):
+                parts.append(jp_artic[DeployPolicyCore.CALF_IDS_ISAAC]
+                             - DeployPolicyCore.NOMINAL_CALF_POS)
+            obs = np.concatenate(parts)
             raw = deploy.run_inference(obs)     # net output already in artic order
             raw_action_artic = raw
         return obs, raw, raw_action_artic
@@ -378,7 +426,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg):
     if isinstance(obs, tuple):
         obs = obs[0]
 
-    logs = {"net_export_err": [], "obs_block_err": {b[0]: [] for b in OBS_BLOCKS},
+    logs = {"net_export_err": [], "obs_block_err": {b[0]: [] for b in obs_blocks},
             "base_height": [], "cmd_vx": [], "actual_vx": [], "proj_grav_z": [],
             "fell": [], "foot_force": [], "joint_pos": []}
 
@@ -399,7 +447,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg):
         if deploy is not None:
             mode = "fixed" if args_cli.drive_mode == "reference" else args_cli.drive_mode
             deploy_obs, deploy_raw, raw_action_artic = deploy_step(mode, last_raw)
-            for name, lo, hi in OBS_BLOCKS:
+            for name, lo, hi in obs_blocks:
                 logs["obs_block_err"][name].append(
                     float(np.max(np.abs(deploy_obs[lo:hi] - env_obs_np[lo:hi]))))
 
@@ -496,7 +544,11 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg):
                          f"{gait['step_freq_hz']} Hz)  filled=stance")
             ax.set_ylim(0, 4)
             fig.tight_layout()
-            png = os.path.join(model_dir, "gait_diagram.png")
+            _ptag = ""
+            if args_cli.report:
+                _ptag = os.path.splitext(os.path.basename(args_cli.report))[0]
+                _ptag = "_" + _ptag.replace("sim_parity_report_", "")
+            png = os.path.join(model_dir, f"gait_diagram{_ptag}.png")
             fig.savefig(png, dpi=110)
             print(f"[INFO] wrote {png}")
         except Exception as e:
@@ -526,6 +578,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg):
         "model_dir": model_dir,
         "backend": args_cli.backend,
         "drive_mode": args_cli.drive_mode,
+        "injury": injury_info,
         "stand_gains": [args_cli.stand_kp, args_cli.stand_kd],
         "policy_gains": [args_cli.policy_kp, args_cli.policy_kd],
         "linvel_source": args_cli.linvel_source,

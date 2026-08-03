@@ -7,7 +7,18 @@
 #   BACKEND=torch VIDEO=1 sim_test/run_sim_test.sh antalgic
 #
 # Env vars: ISAACLAB (default ~/IsaacLab), BACKEND (numpy|torch), VIDEO (1 to record),
-#           NUM_STEPS, CMD_VX, DRIVE_WITH (deploy|reference).
+#           NUM_STEPS, CMD_VX, DRIVE_WITH (deploy|reference),
+#           HEADLESS (default 1; 0 opens the Isaac Sim GUI),
+#           GO1_PROB_PEG_LEG (default 0 = healthy robot; raise for injury tests),
+#           GO1_ABS_JOINT_OBS (default 1 = obs 52 with calf_pos_abs; phase3+ models),
+#           REPORT_TAG (suffix for the report filename, e.g. rl_severe),
+#           VIDEO_LENGTH (steps to record when VIDEO=1, default 400).
+#
+# Injured-run example (leg fixed, splint length + foot friction pinned):
+#   GO1_PROB_PEG_LEG=1 GO1_TARGET_LEG=rl \
+#   GO1_SPLINT_LENGTH_MIN=0.25 GO1_SPLINT_LENGTH_MAX=0.25 \
+#   GO1_FOOT_FRICTION_MIN=0.8 GO1_FOOT_FRICTION_MAX=0.8 \
+#   REPORT_TAG=rl VIDEO=1 sim_test/run_sim_test.sh antalgic
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -38,6 +49,13 @@ declare -A CKPT=(
 # and the PD actuator (Kp=20/Kd=0.5) the policy was trained against.
 export GO1_PHASE="${GO1_PHASE:-student}"
 export GO1_INJURY_ONEHOT=1 GO1_PROPRIO_ONLY=1 GO1_FLAT_TERRAIN=1
+# phase3+ students observe absolute calf angles (policy obs 48 -> 52).
+export GO1_ABS_JOINT_OBS="${GO1_ABS_JOINT_OBS:-1}"
+# Injury sampling off by default: verify the healthy gait first.
+export GO1_PROB_PEG_LEG="${GO1_PROB_PEG_LEG:-0}"
+# This is an EVAL harness: the training curriculum would override the pinned
+# injury probability (to its step-0 ramp value 0.1) and the splint range.
+export GO1_USE_PEG_LEG_CURRICULUM="${GO1_USE_PEG_LEG_CURRICULUM:-0}"
 export GO1_STRICT_TERMINATIONS=1 GO1_BAD_ORIENTATION_LIMIT=0.8
 export GO1_PD_ACTUATOR=1 GO1_PD_KP="${GO1_PD_KP:-20.0}" GO1_PD_KD="${GO1_PD_KD:-0.5}"
 export GO1_CMD_VY_ABS=0.0 GO1_CMD_YAW_ABS=0.0
@@ -46,7 +64,10 @@ MODELS=("$@")
 [ ${#MODELS[@]} -eq 0 ] && MODELS=(antalgic fault_tolerant symmetry)
 
 VIDEO_FLAG=""
-[ "${VIDEO:-0}" = "1" ] && VIDEO_FLAG="--video"
+[ "${VIDEO:-0}" = "1" ] && VIDEO_FLAG="--video --video_length ${VIDEO_LENGTH:-400}"
+
+HEADLESS_FLAG=""
+[ "${HEADLESS:-1}" = "1" ] && HEADLESS_FLAG="--headless"
 
 for m in "${MODELS[@]}"; do
   entry="${CKPT[$m]:-}"
@@ -69,8 +90,8 @@ for m in "${MODELS[@]}"; do
     --stand_kp "${STAND_KP}" --stand_kd "${STAND_KD}" \
     --policy_kp "${POLICY_KP}" --policy_kd "${POLICY_KD}" \
     --stand_steps "${STAND_STEPS}" --linvel_source "${LINVEL_SOURCE}" \
-    --report "${REPO_ROOT}/${model_dir}/sim_parity_report_${DRIVE_MODE}.json" \
-    --headless ${VIDEO_FLAG}
+    --report "${REPO_ROOT}/${model_dir}/sim_parity_report_${DRIVE_MODE}${REPORT_TAG:+_${REPORT_TAG}}.json" \
+    ${HEADLESS_FLAG} ${VIDEO_FLAG}
 done
 
 echo "All done. Reports: <model>/exported/sim_parity_report.json"
