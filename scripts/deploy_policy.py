@@ -46,6 +46,11 @@ class Go1PolicyDeployNode:
         #       use the Phase-2 / student peg-leg policy for true injury adaptation.
         self.injured_leg_idx = rospy.get_param('~injured_leg_idx', -1)
         rospy.loginfo(f"Injured Leg Index set to: {self.injured_leg_idx} (-1 = Healthy)")
+        # Splint lock angle of the injured calf (rad). The training env rewrites the
+        # injured calf's default_joint_pos to the lock angle, which drives the
+        # joint_pos_rel obs block and the action offset (verified in sim_test with
+        # obs error 0). Set this to the ACTUAL angle the physical splint holds.
+        self.splint_calf_angle = float(rospy.get_param('~splint_calf_angle', -1.5))
 
         # Gains settings.
         # The distilled students were TRAINED with a PD actuator at Kp=20 / Kd=0.5
@@ -99,6 +104,14 @@ class Go1PolicyDeployNode:
             0.8, 0.8, 1.0, 1.0,       # thighs (front 0.8, rear 1.0)
             -1.5, -1.5, -1.5, -1.5    # calfs
         ])
+        # calf_pos_abs nominal (obs 48:52): the PRE-INJURY calf defaults. Unlike
+        # default_joint_pos this is never rewritten on injury, so the splint lock
+        # angle stays visible to the policy (matches mdp.calf_pos_nominal_rel).
+        self.nominal_calf_pos = np.array([-1.5, -1.5, -1.5, -1.5], dtype=np.float32)
+        if self.injured_leg_idx >= 0:
+            self.default_joint_pos[8 + self.injured_leg_idx] = self.splint_calf_angle
+            rospy.loginfo(f"Injured calf default set to splint lock angle "
+                          f"{self.splint_calf_angle} rad (leg {self.injured_leg_idx}).")
 
         # Default joint limits in Isaac articulation (type-grouped) order.
         self.joint_pos_min = np.array([
@@ -121,6 +134,8 @@ class Go1PolicyDeployNode:
         # Privileged peg-leg terms appended after the 48 proprio dims, in layout order.
         # Empty for the proprioception-only (R48) student.
         self.privileged_obs = np.array([0.0, 0.0, 1.0], dtype=np.float32)  # [index, splint_len, friction]
+        # calf_pos_abs obs block (48:52) — GO1_ABS_JOINT_OBS=1 models (phase3+).
+        self.use_calf_pos_abs = False
         # Recurrence metadata (set from deployment_config.json; auto-detected at load time as a fallback).
         self.is_recurrent = False
         self.rnn_num_layers = 1
@@ -180,6 +195,8 @@ class Go1PolicyDeployNode:
         # Look for deployment_config.json next to the model file (falls back to hardcoded defaults).
         cfg_path = os.path.join(os.path.dirname(self.model_path), 'deployment_config.json')
         if not os.path.exists(cfg_path):
+            if self._load_policy_io_config():
+                return
             rospy.logwarn(f"deployment_config.json not found at {cfg_path}; using built-in defaults "
                           f"(obs_dim={self.obs_dim}, action_scale={self.action_scale}).")
             return
@@ -189,6 +206,8 @@ class Go1PolicyDeployNode:
 
             self.obs_dim = int(cfg['input']['obs_dim'])
             self.action_scale = float(cfg['action']['action_scale'])
+            self.use_calf_pos_abs = any(
+                entry.get('name') == 'calf_pos_abs' for entry in cfg['input']['layout'])
 
             # Build the privileged term vector from the layout order + healthy defaults so the
             # values always line up with whatever model is dropped in.
@@ -213,6 +232,31 @@ class Go1PolicyDeployNode:
                           f"recurrent={self.is_recurrent}")
         except Exception as e:
             rospy.logwarn(f"Failed to parse {cfg_path}: {e}. Using built-in defaults.")
+
+    def _load_policy_io_config(self):
+        # Newer exports (phase3+) ship policy_io.json instead of deployment_config.json.
+        io_path = os.path.join(os.path.dirname(self.model_path), 'policy_io.json')
+        if not os.path.exists(io_path):
+            return False
+        try:
+            with open(io_path, 'r') as f:
+                io = json.load(f)
+            self.obs_dim = int(io['observation_dim'])
+            names = [e.get('name') for e in io.get('observation_layout', [])]
+            self.use_calf_pos_abs = 'calf_pos_abs' in names
+            # Students consume the policy group only — no privileged terms.
+            self.privileged_obs = np.zeros(0, dtype=np.float32)
+            if io.get('is_recurrent'):
+                self.is_recurrent = True
+                rnn = io.get('rnn') or {}
+                self.rnn_num_layers = int(rnn.get('num_layers', self.rnn_num_layers))
+                self.rnn_hidden_size = int(rnn.get('hidden_size', self.rnn_hidden_size))
+            rospy.loginfo(f"Loaded policy_io.json: obs_dim={self.obs_dim}, "
+                          f"calf_pos_abs={self.use_calf_pos_abs}, recurrent={self.is_recurrent}")
+            return True
+        except Exception as e:
+            rospy.logwarn(f"Failed to parse {io_path}: {e}.")
+            return False
 
     def load_policy(self):
         if not os.path.exists(self.model_path):
@@ -408,7 +452,7 @@ class Go1PolicyDeployNode:
         # [vx_cmd, vy_cmd, 0] in the base frame.
         base_lin_vel = np.array([self.cmd_vel[0], self.cmd_vel[1], 0.0], dtype=np.float32)
 
-        # Assemble the 51-dim observation in the exact deployment_config.json layout order:
+        # Assemble the observation in the exact config layout order:
         # [0:3]   base_lin_vel
         # [3:6]   base_ang_vel        (IMU gyroscope)
         # [6:9]   projected_gravity
@@ -416,6 +460,8 @@ class Go1PolicyDeployNode:
         # [12:24] joint_pos_rel
         # [24:36] joint_vel
         # [36:48] actions             (last policy action)
+        # [48:52] calf_pos_abs        (phase3+, GO1_ABS_JOINT_OBS=1: q_calf - PRE-INJURY nominal)
+        #   -or-
         # [48:51] privileged peg-leg  [peg_leg_index, peg_leg_splint_length, peg_leg_foot_friction]
         parts = [
             base_lin_vel,                                  # 3
@@ -426,6 +472,9 @@ class Go1PolicyDeployNode:
             joint_vel_isaac.astype(np.float32),            # 12
             self.last_action.astype(np.float32),           # 12
         ]
+        if self.use_calf_pos_abs:
+            parts.append((joint_pos_isaac[8:12]
+                          - self.nominal_calf_pos).astype(np.float32))  # 4
         if self.privileged_obs.size > 0:
             parts.append(self.privileged_obs)              # 3 (Phase-1 healthy only)
 
