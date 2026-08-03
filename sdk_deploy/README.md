@@ -146,8 +146,16 @@ phase3 LSTM student (obs 52, `model/phase3_antalgic_s42/`)는 **vx 0.3~1.0 로�
 같은 이유로 cmd=0 인 hang 은 이 모델에겐 분포 밖이라 움직임이 이상해도 모델
 결함이 아닙니다 — 지면 walk 로 판단하세요:
 ```bash
+# 2026-08-03 실기 확정 레시피 (15초 완주, 낙상 없음, 직진 ±7°):
 python3 deploy.py --mode walk --policy model/phase3_antalgic_s42/policy_numpy.npz \
-    --vx 0.3 --vx-floor 0.3 --lin-vel kf --duration 10
+    --vx 0.4 --vx-floor 0.3 --wz 0.08 --lin-vel kf --duration 15 --power-protect 9 \
+    --authority-ramp 0 --gain-blend 1.0
+# --authority-ramp 0 필수: 긴 권한 램프(3s)는 "명령해도 안 움직이는" 분포 밖
+#   경험을 LSTM 에 쌓아 가짜 부상 믿음(peg_RR 0.76 실측) -> 3족 고착 -> 낙상 x2.
+#   즉시 전권이 학습의 에피소드 시작 조건과 동일합니다.
+# --gain-blend 1.0: 인계 고강성(Kp60) 구간을 3s->1s 로 줄여 인계 충격 완화.
+# --wz 0.08: RR 소극성이 만드는 우측 요 드리프트(-0.05 rad/s 실측) 트림.
+# 속도별: 0.3 느리지만 안정 / 0.4 권장 / 0.5 는 좌측 롤 발산으로 낙상 (미해결).
 ```
 student 는 조립된 59차원 관측의 앞 52차원(policy 그룹)만 소비하고, LSTM
 hidden/cell 은 정책 인계 시점에 자동으로 0 리셋됩니다 (policy.py / deploy.py).

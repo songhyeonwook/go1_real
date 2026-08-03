@@ -156,6 +156,10 @@ SDK_ROBOT_IP = "192.168.123.10"
 SDK_ROBOT_PORT = 8007
 POWER_PROTECT_LEVEL = 5      # 1(보수적)~10; 처음엔 낮게
 
+# 부상 추정 표시 (injury_probe.npz 가 있을 때만 사용)
+PROBE_EMA_TAU = 1.0          # 추정치 이동평균 시정수 (s) — 순간값 출렁임 억제
+PROBE_PEG_THRESHOLD = 0.5    # EMA peg 값이 이 이상이면 해당 다리 부상 판정
+
 # 안전 가드
 TILT_LIMIT_RAD = 0.7         # roll/pitch 초과 시 즉시 damping
 LOOP_OVERRUN_LIMIT = 0.5     # 한 주기가 dt 의 (1+이 값)배를 넘기면 경고

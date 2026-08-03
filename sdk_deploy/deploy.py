@@ -83,6 +83,7 @@ class Deployer:
         # (시뮬에서 학습한 선형 해독기 W(K,256), b(K), names(K) —
         #  scripts/train_injury_probe.py 로 생성. 없으면 표시 생략.)
         self.probe = None
+        self._probe_ema = None
         policy_path = getattr(args, "policy", None)
         if policy_path:
             p = os.path.join(os.path.dirname(os.path.abspath(policy_path)),
@@ -97,13 +98,44 @@ class Deployer:
                 print("[PROBE] injury_probe.npz 로드 — 실시간 부상 추정 표시: "
                       + ", ".join(self.probe["names"]))
 
-    def _probe_msg(self, policy):
+    def _probe_update(self, policy, dt):
+        """매 스텝 probe 를 평가하고 EMA(시정수 PROBE_EMA_TAU)로 평활."""
         h = getattr(policy, "hidden", None)
         if self.probe is None or h is None:
-            return None
+            return
         y = self.probe["W"] @ h + self.probe["b"]
-        return " ".join("%s=%+.2f" % (n, v)
-                        for n, v in zip(self.probe["names"], y))
+        if self._probe_ema is None:
+            self._probe_ema = y.astype(np.float64)
+        else:
+            alpha = min(1.0, dt / C.PROBE_EMA_TAU)
+            self._probe_ema += alpha * (y - self._probe_ema)
+
+    def _probe_msg(self, elapsed=None):
+        if self.probe is None or self._probe_ema is None:
+            return None
+        names = self.probe["names"]
+        vals = dict(zip(names, self._probe_ema))
+        msg = " ".join("%s=%+.2f" % (n, vals[n]) for n in names)
+        # 인계 램프 동안은 로봇이 명령대로 움직이지 않아 LSTM 이 일시적으로
+        # 가짜 부상을 추론합니다 (실측: 램프 중 peg_RR 0.75 스파이크 후 소멸).
+        # 램프 + 1초가 지날 때까지 판정을 유보합니다.
+        if elapsed is not None and elapsed < max(
+                getattr(self.args, 'gain_blend', C.GAIN_BLEND_TIME),
+                getattr(self.args, 'authority_ramp', 0.0)) + 1.0:
+            return msg + "  -> 판정: (수렴 중)"
+        # 판정: peg_* EMA 최대값이 임계 이상이면 해당 다리 부상 의심.
+        pegs = [(n[4:], v) for n, v in vals.items() if n.startswith("peg_")
+                and n != "peg_injured"]
+        if pegs:
+            leg, worst = max(pegs, key=lambda t: t[1])
+            if worst >= C.PROBE_PEG_THRESHOLD:
+                msg += "  -> 판정: %s 부상 (%.2f" % (leg, worst)
+                if "splint_len" in vals:
+                    msg += ", 부목 %.2f m" % vals["splint_len"]
+                msg += ")"
+            else:
+                msg += "  -> 판정: 건강"
+        return msg
 
     # ---- 공통 루프 유틸 --------------------------------------------------
 
@@ -222,6 +254,7 @@ class Deployer:
         # 정책 인계 시점에 상태를 리셋합니다 (feed-forward / selftest 람다는 no-op).
         if hasattr(policy, "reset"):
             policy.reset()
+        self._probe_ema = None  # 추정 EMA 도 에피소드마다 새로 시작
         log = None
         if getattr(self.args, "log_npz", None):
             log = {k: [] for k in ("t", "q", "dq", "q_des", "action",
@@ -229,72 +262,87 @@ class Deployer:
         last_action = np.zeros(C.NUM_ACTIONS)
         n = int(duration / C.CONTROL_DT)
         t_prev = time.monotonic()
-        for k in range(n):
-            t0 = time.monotonic()
-            dt = np.clip(t0 - t_prev, 0.5 * C.CONTROL_DT, 2 * C.CONTROL_DT)
-            t_prev = t0
-            if _stdin_pressed():
-                print("[POLICY] 사용자 정지")
-                break
+        try:
+            for k in range(n):
+                t0 = time.monotonic()
+                dt = np.clip(t0 - t_prev, 0.5 * C.CONTROL_DT, 2 * C.CONTROL_DT)
+                t_prev = t0
+                if _stdin_pressed():
+                    print("[POLICY] 사용자 정지")
+                    break
 
-            state = self.robot.read_state()
-            out = self._step_estimator(state, dt)
-            if not self._tilt_ok(state):
-                raise RuntimeError("tilt guard during policy")
+                state = self.robot.read_state()
+                out = self._step_estimator(state, dt)
+                if not self._tilt_ok(state):
+                    raise RuntimeError("tilt guard during policy")
 
-            ramp = _smoothstep(k * C.CONTROL_DT / cmd_ramp)
-            cmd = cmd_target * ramp
-            # 학습 명령 분포에 하한이 있는 모델(phase3 student: vx 0.3~1.0)은
-            # 램프가 하한 밑을 통과하면 분포 밖 명령이 LSTM 이력에 쌓입니다.
-            # --vx-floor 로 하한을 주면 전진 명령은 시작부터 그 값 이상입니다
-            # (학습 에피소드도 정지 상태 + cmd>=하한에서 시작하므로 일치).
-            if self.args.vx_floor > 0.0 and cmd_target[0] > 0.0:
-                cmd[0] = max(cmd[0], self.args.vx_floor)
-            # base_lin_vel 입력: 이 저장소의 모든 시뮬 검증(sim_test/deploy_core.py,
-            # ROS 스택)은 속도 명령을 그대로 넣는 proxy 방식입니다. 온보드 KF 는
-            # 실보행에서 과소추정이 확인돼(cmd 0.3 에서 0.02~0.15) 기본값은 proxy,
-            # --lin-vel kf 로 추정치를 쓸 수 있습니다 (텔레메트리는 항상 KF).
-            if self.args.lin_vel == "cmd":
-                lin_vel_obs = np.array([cmd[0], cmd[1], 0.0], dtype=np.float32)
-            else:
-                lin_vel_obs = out["v_body"]
-            obs = build_obs(state, lin_vel_obs, cmd, last_action)
-            action = policy(obs)
-            last_action = action
-            q_des = C.DEFAULT_JOINT_POS + C.ACTION_SCALE * action
-            # 기립 게인(STAND_KP=60)에서 정책 게인으로 부드럽게 블렌딩.
-            # 인계 직후 바로 Kp 를 20 으로 떨어뜨리면 아직 하중이 실린 뒷무릎이
-            # 처지면서 정책이 학습 밖 자세에서 시작합니다 (실측: 2026-08-02 로그).
-            blend = _smoothstep(k * C.CONTROL_DT / C.GAIN_BLEND_TIME)
-            kp_now = self.args.stand_kp + (self.args.kp - self.args.stand_kp) * blend
-            kd_now = self.args.stand_kd + (self.args.kd - self.args.stand_kd) * blend
-            self.robot.send_positions(q_des, kp_now, kd_now)
+                ramp = _smoothstep(k * C.CONTROL_DT / cmd_ramp)
+                cmd = cmd_target * ramp
+                # 학습 명령 분포에 하한이 있는 모델(phase3 student: vx 0.3~1.0)은
+                # 램프가 하한 밑을 통과하면 분포 밖 명령이 LSTM 이력에 쌓입니다.
+                # --vx-floor 로 하한을 주면 전진 명령은 시작부터 그 값 이상입니다
+                # (학습 에피소드도 정지 상태 + cmd>=하한에서 시작하므로 일치).
+                if self.args.vx_floor > 0.0 and cmd_target[0] > 0.0:
+                    cmd[0] = max(cmd[0], self.args.vx_floor)
+                # base_lin_vel 입력: 이 저장소의 모든 시뮬 검증(sim_test/deploy_core.py,
+                # ROS 스택)은 속도 명령을 그대로 넣는 proxy 방식입니다. 온보드 KF 는
+                # 실보행에서 과소추정이 확인돼(cmd 0.3 에서 0.02~0.15) 기본값은 proxy,
+                # --lin-vel kf 로 추정치를 쓸 수 있습니다 (텔레메트리는 항상 KF).
+                if self.args.lin_vel == "cmd":
+                    lin_vel_obs = np.array([cmd[0], cmd[1], 0.0], dtype=np.float32)
+                else:
+                    lin_vel_obs = out["v_body"]
+                obs = build_obs(state, lin_vel_obs, cmd, last_action)
+                action = policy(obs)
+                last_action = action
+                # 인계 램프.
+                #   게인   : STAND_KP(60) -> 학습 게인(20), GAIN_BLEND_TIME(3s)
+                #   행동권한: 0 -> 100%, --authority-ramp (기본 1s)
+                # 권한 램프는 짧아야 합니다 — 실측(2026-08-03): 3초 램프 동안
+                # "명령해도 몸이 안 움직이는" 분포 밖 경험이 LSTM 에 쌓여
+                # peg_RR 0.76 의 가짜 부상 믿음이 생기고, 권한이 들어온 뒤
+                # RR 을 아끼는 3족 보행 고착 -> 우측 후방으로 낙상 x2.
+                # 램프 0(즉시 전권)은 학습의 에피소드 시작 조건과 동일합니다.
+                blend = _smoothstep(k * C.CONTROL_DT / self.args.gain_blend)
+                if self.args.authority_ramp > 0.0:
+                    authority = _smoothstep(k * C.CONTROL_DT / self.args.authority_ramp)
+                else:
+                    authority = 1.0
+                q_des = C.DEFAULT_JOINT_POS + C.ACTION_SCALE * authority * action
+                kp_now = self.args.stand_kp + (self.args.kp - self.args.stand_kp) * blend
+                kd_now = self.args.stand_kd + (self.args.kd - self.args.stand_kd) * blend
+                self.robot.send_positions(q_des, kp_now, kd_now)
 
-            if log is not None:
-                log["t"].append(t0)
-                log["q"].append(state.q.copy())
-                log["dq"].append(state.dq.copy())
-                log["q_des"].append(q_des.copy())
-                log["action"].append(np.asarray(action, dtype=np.float32))
-                log["ff"].append(state.foot_force.copy())
-                log["quat"].append(state.quat_wxyz.copy())
-                log["gyro"].append(state.gyro.copy())
-                log["v_kf"].append(out["v_body"].copy())
-                log["cmd"].append(cmd.copy())
-                h = getattr(policy, "hidden", None)
-                if h is not None:
-                    log["h"].append(h.copy())  # LSTM 상태 — probe 학습/부상 추정용
+                if log is not None:
+                    log["t"].append(t0)
+                    log["q"].append(state.q.copy())
+                    log["dq"].append(state.dq.copy())
+                    log["q_des"].append(q_des.copy())
+                    log["action"].append(np.asarray(action, dtype=np.float32))
+                    log["ff"].append(state.foot_force.copy())
+                    log["quat"].append(state.quat_wxyz.copy())
+                    log["gyro"].append(state.gyro.copy())
+                    log["v_kf"].append(out["v_body"].copy())
+                    log["cmd"].append(cmd.copy())
+                    h = getattr(policy, "hidden", None)
+                    if h is not None:
+                        log["h"].append(h.copy())  # LSTM 상태 — probe 학습/부상 추정용
 
-            self._telemetry(time.monotonic(), state, out, action, cmd,
-                            extra=self._probe_msg(policy))
-            elapsed = time.monotonic() - t0
-            if elapsed > C.CONTROL_DT * (1.0 + C.LOOP_OVERRUN_LIMIT):
-                print(f"[WARN] 루프 지연 {elapsed * 1000:.1f} ms")
-            self._sleep_rest(t0)
+                self._probe_update(policy, dt)
+                self._telemetry(time.monotonic(), state, out, action, cmd,
+                                extra=self._probe_msg(elapsed=k * C.CONTROL_DT))
+                elapsed = time.monotonic() - t0
+                if elapsed > C.CONTROL_DT * (1.0 + C.LOOP_OVERRUN_LIMIT):
+                    print(f"[WARN] 루프 지연 {elapsed * 1000:.1f} ms")
+                self._sleep_rest(t0)
 
-        if log is not None:
-            np.savez(self.args.log_npz, **{k: np.asarray(v) for k, v in log.items()})
-            print(f"[LOG] {len(log['t'])} steps -> {self.args.log_npz}")
+        finally:
+            # 기울임 가드/Ctrl-C 로 루프가 끊겨도 로그는 남깁니다 — 낙상
+            # 직전 데이터가 진단에 가장 중요합니다 (실측: 유실 사고 1회).
+            if log is not None and log["t"]:
+                np.savez(self.args.log_npz,
+                         **{k: np.asarray(v) for k, v in log.items()})
+                print(f"[LOG] {len(log['t'])} steps -> {self.args.log_npz}")
 
     def dry_run(self, duration):
         print("[DRY] 모터 명령 없음 (zero-torque 상태요청만 송신) — "
@@ -342,6 +390,12 @@ def main():
     ap.add_argument("--vx-floor", type=float, default=0.0,
                     help="전진 명령 램프의 하한. 학습 분포에 하한이 있는 모델용 "
                          "(phase3 student 는 0.3 권장)")
+    ap.add_argument("--gain-blend", type=float, default=C.GAIN_BLEND_TIME,
+                    help="인계 시 STAND_KP->KP 블렌딩 시간(s). 짧을수록 인계가 "
+                         "덜 격함 (기립 후엔 Kp 20 으로도 버팀 — 실측). 권장 1.0")
+    ap.add_argument("--authority-ramp", type=float, default=1.0,
+                    help="정책 행동 권한 0->1 램프 시간(s). 0=즉시 전권(학습 조건과 동일). "
+                         "길면 LSTM 이 램프 중 가짜 부상을 학습함 (실측)")
     ap.add_argument("--stand-kp", type=float, default=C.STAND_KP,
                     help="기립/유지 게인. 60=수평 기립(실측), 30=부드럽지만 뒷다리 처짐")
     ap.add_argument("--stand-kd", type=float, default=C.STAND_KD)
