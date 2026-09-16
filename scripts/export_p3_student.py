@@ -56,8 +56,8 @@ ACTION_DIM = 12
 HIDDEN = 256
 MLP_DIMS = [512, 256, 128]
 
-# nn.LSTM packs gates as [input, forget, cell, output]; the NumPy backends in
-# sdk_deploy/policy.py and scripts/deploy_policy.py assume that order.
+# nn.LSTM packs gates as [input, forget, cell, output]; the NumPy backend in
+# sdk_deploy/policy.py assumes that order.
 TORCH_GATE_ORDER = "ifgo"
 
 

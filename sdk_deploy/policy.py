@@ -89,7 +89,8 @@ class Policy:
             raise ValueError(
                 ".npz LSTM gate order {!r} != 'ifgo'; "
                 "scripts/export_p3_student.py 로 다시 내보내세요".format(gate_order))
-        if "obs_scale" in data and not int(data.get("obs_scale_folded", 0)):
+        folded = int(data["obs_scale_folded"]) if "obs_scale_folded" in data else 0
+        if "obs_scale" in data and not folded:
             raise ValueError(
                 "{}: obs_scale 이 lstm_weight_ih 에 접혀 있지 않습니다. 이 백엔드는 "
                 "raw 관측을 그대로 먹이므로 스케일이 통째로 빠집니다.".format(path))

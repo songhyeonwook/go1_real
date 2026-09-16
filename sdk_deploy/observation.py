@@ -13,9 +13,7 @@ concat 순서 (스케일/클립/노이즈 없음 — obs 스케일은 정책 그
   last_action(12)       : 직전 정책 출력 (스케일 전 raw)
   peg_leg_one_hot(4)    : 부상 다리 (FL, FR, RL, RR). 정상 = 전부 0
 
-base_lin_vel 은 더 이상 관측에 없습니다. 학습 env 가 policy 그룹에서 빼고
-teacher 전용 privileged 로 옮겼기 때문입니다 (실기 Go1 는 몸통 선속도를 측정할
-수 없음). 추정이 필요하면 정책의 vel_head 출력을 쓰세요 — policy.Policy.aux 참고.
+
 """
 
 import numpy as np
