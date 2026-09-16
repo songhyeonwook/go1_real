@@ -118,10 +118,20 @@ class DeployPolicyCore:
         with open(io_path, "r") as f:
             io = json.load(f)
 
-        self.obs_dim = int(io["observation_dim"])
-        names = [e.get("name") for e in io.get("observation_layout", [])]
-        self.use_calf_pos_abs = "calf_pos_abs" in names
-        self.privileged_obs = np.zeros(0, dtype=np.float32)
+        if "observation_dim" in io:
+            self.obs_dim = int(io["observation_dim"])
+            names = [e.get("name") for e in io.get("observation_layout", [])]
+            self.use_calf_pos_abs = "calf_pos_abs" in names
+            self.privileged_obs = np.zeros(0, dtype=np.float32)
+        else:
+            # Older policy_io (phase1 teacher) has no layout — read the npz meta.
+            # Teacher input = 52 proprio (incl. calf_pos_abs) + N privileged
+            # peg-leg terms, all 0 for a healthy robot.
+            data = np.load(os.path.join(self.model_dir, "policy_numpy.npz"))
+            self.obs_dim = int(data["obs_dim"])
+            self.use_calf_pos_abs = self.obs_dim >= 52
+            self.privileged_obs = np.zeros(max(0, self.obs_dim - 52),
+                                           dtype=np.float32)
 
         if io.get("is_recurrent"):
             self.is_recurrent = True

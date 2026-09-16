@@ -54,9 +54,9 @@ cp /home/shw/go1_compar/models/phase1_mlp_s42/exported/policy.* \
    /home/shw/go1_real/sdk_deploy/model/phase1/
 ```
 
-`IO_descriptors.yaml` 은 학습 env 가 스스로 출력한 입출력 명세입니다
-(obs 그룹별 term 순서/차원/단위, action scale/offset/관절 순서, 관절
-기본각·한계·게인, 제어 주기). config.py 의 상수들이 이 파일과 다르면
+`IO_descriptors.yaml` 은 학습 env 가 cale/offset/관절 순서, 관절
+기본각·한계·게인, 제어 주기). config.py 의스스로 출력한 입출력 명세입니다
+(obs 그룹별 term 순서/차원/단위, action s 상수들이 이 파일과 다르면
 config.py 가 틀린 것입니다 — 체크포인트를 새로 학습/내보낼 때마다 이
 파일로 대조하세요. 커스텀 obs term 은 go1_compar 의
 `mdp/observations.py` 처럼 `@generic_io_descriptor` 데코레이터가 있어야

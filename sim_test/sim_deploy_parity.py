@@ -439,7 +439,12 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg):
 
         # (1) net-export fidelity: identical input (env_obs) to shadow deploy net
         if deploy_shadow is not None:
-            deploy_net_action = deploy_shadow.run_inference(env_obs_np)
+            shadow_in = env_obs_np
+            if deploy_shadow.privileged_obs.size > 0:
+                # Teacher nets take [policy(52) | privileged] — pad with the
+                # healthy defaults the deploy pipeline would feed.
+                shadow_in = np.concatenate([env_obs_np, deploy_shadow.privileged_obs])
+            deploy_net_action = deploy_shadow.run_inference(shadow_in)
             logs["net_export_err"].append(
                 float(np.max(np.abs(deploy_net_action - ref_action))))
 

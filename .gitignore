@@ -11,3 +11,15 @@ __pycache__/
 
 # Isaac/Hydra run outputs
 outputs/
+
+# Training-run artifacts that ride along in a model directory.
+# Keep the checkpoint, its config.json and exported/ — those are the deploy
+# provenance. The logs, tensorboard events and paper eval dumps belong to
+# go1_lod, not here.
+*.log
+events.out.tfevents.*
+sdk_deploy/model/*/eval_dump/
+sdk_deploy/model/*/eval_*_n*_s*/
+sdk_deploy/model/*/*.out
+sdk_deploy/model/*/*.png
+sdk_deploy/model/*/*.csv

@@ -15,7 +15,6 @@ import time
 import traceback
 from geometry_msgs.msg import Twist
 
-# Depending on Unitree ROS installation, the package name could be unitree_legged_msgs or similar
 try:
     from unitree_legged_msgs.msg import LowCmd, LowState, MotorCmd, MotorState
 except ImportError:
@@ -34,7 +33,6 @@ class Go1PolicyDeployNode:
         self.is_numpy = self.model_path.endswith('.npz')
         self.policy_backend = None
 
-        # Control frequencies (env: sim dt 0.005 * decimation 4 = 0.02s -> 50Hz)
         self.loop_rate = rospy.Rate(50)  # 50Hz (dt = 0.02s)
 
         # Injury setting (-1 for healthy, 0=FL, 1=FR, 2=RL, 3=RR)
@@ -156,9 +154,8 @@ class Go1PolicyDeployNode:
 
         self.last_action = np.zeros(12) # Last action output from policy
 
-        # Recurrent LSTM state (used only when the loaded policy is recurrent).
-        # ONNX carries these as external inputs; the NumPy path advances them in place;
-        # the TorchScript path keeps them internally.
+        # Recurrent LSTM state 
+       
         self.h_state = None
         self.c_state = None
 

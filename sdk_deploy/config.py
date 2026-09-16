@@ -108,13 +108,9 @@ L_CALF = 0.213
 FOOT_RADIUS = 0.02
 
 # ---------------------------------------------------------------------------
-# 상태 추정기 (legged_control / MIT Mini-Cheetah linear KF 계열 기본값)
+# 상태 추정기
 # ---------------------------------------------------------------------------
-CONTACT_FORCE_THRESHOLD = 20.0   # footForce (N 근사) 접촉 판정 — bias 차감 후 값 기준
-# Go1 발 압력 센서는 무부하에서도 발마다 큰 오프셋을 출력합니다.
-# 실측 (2026-08-01, 로봇을 하네스에 매달아 완전 무부하, dry-run ff, FL FR RL RR):
-#   [125, 114, 114, 116]  ← 이 값이면 임계 20 으로는 항상 contact=4
-# 재측정 방법: 로봇을 매달고 `deploy.py --mode dry-run` 의 ff 값을 그대로 적기.
+CONTACT_FORCE_THRESHOLD = 20.0 
 FOOT_FORCE_BIAS = np.array([125.0, 114.0, 114.0, 116.0])  # FL, FR, RL, RR
 EST_NOISE_P_IMU = 0.02           # process: 위치
 EST_NOISE_V_IMU = 0.02           # process: 속도
@@ -127,19 +123,7 @@ EST_SWING_INFLATION = 1e4        # 스윙 발 노이즈 팽창 계수
 GRAVITY = np.array([0.0, 0.0, -9.81])
 
 # ---------------------------------------------------------------------------
-# 관측 — teacher actor 는 두 그룹을 연결해 받습니다 (agent.yaml obs_groups:
-# policy = [policy, privileged_obs], 이 순서).
-#
-# policy 그룹 (52, env.yaml observations.policy 순서):
-#   base_lin_vel(3) + base_ang_vel(3) + projected_gravity(3)
-#   + velocity_commands(3) + joint_pos_rel(12) + joint_vel_rel(12)
-#   + last_action(12) + calf_pos_abs(4)
-# privileged_obs 그룹 (7): peg_leg_one_hot(5: FL,FR,RL,RR,injured_flag)
-#   + splint_length(1) + foot_friction(1)
-#
-# phase1 은 부상 0%(prob_peg_leg=0)로 학습됐으므로 학습 내내 privileged
-# 꼬리는 전부 0 이었습니다. 정상 로봇 배포에서도 0 을 넣는 것이 정확히
-# 학습 분포와 일치합니다.
+# 관측 — teacher actor 는 두 그룹을 연결
 # ---------------------------------------------------------------------------
 POLICY_OBS_DIM = 52
 PRIVILEGED_OBS_DIM = 7

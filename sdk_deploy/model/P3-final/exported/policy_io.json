@@ -1,0 +1,146 @@
+{
+  "name": "P3-final",
+  "checkpoint": "/home/shw/go1_real/sdk_deploy/model/P3-final/model_3999.pt",
+  "iteration": 3999,
+  "phase": "phase3_student",
+  "is_recurrent": true,
+  "rnn": {
+    "type": "lstm",
+    "num_layers": 1,
+    "hidden_size": 256
+  },
+  "observation_dim": 49,
+  "action_dim": 12,
+  "observation_layout": [
+    {
+      "name": "base_ang_vel",
+      "dim": 3
+    },
+    {
+      "name": "projected_gravity",
+      "dim": 3
+    },
+    {
+      "name": "velocity_commands",
+      "dim": 3
+    },
+    {
+      "name": "joint_pos_rel",
+      "dim": 12
+    },
+    {
+      "name": "joint_vel_rel",
+      "dim": 12
+    },
+    {
+      "name": "last_actions",
+      "dim": 12
+    },
+    {
+      "name": "peg_leg_one_hot",
+      "dim": 4
+    }
+  ],
+  "obs_scale": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.23000000417232513,
+    0.23000000417232513,
+    0.23000000417232513,
+    0.23000000417232513,
+    0.23000000417232513,
+    0.23000000417232513,
+    0.23000000417232513,
+    0.23000000417232513,
+    0.23000000417232513,
+    0.23000000417232513,
+    0.23000000417232513,
+    0.23000000417232513,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "action": {
+    "scale": 0.25,
+    "use_default_offset": true
+  },
+  "control": {
+    "dt": 0.02,
+    "kp": 20.0,
+    "kd": 0.5
+  },
+  "aux_heads": {
+    "source": "h_out (LSTM output)",
+    "splint_length": {
+      "dim": 1,
+      "units": "m"
+    },
+    "base_lin_vel": {
+      "dim": 3,
+      "units": "m/s"
+    }
+  },
+  "npz_keys": [
+    "0_bias",
+    "0_weight",
+    "2_bias",
+    "2_weight",
+    "4_bias",
+    "4_weight",
+    "6_bias",
+    "6_weight",
+    "action_dim",
+    "arch",
+    "gate_order",
+    "lstm_bias_hh",
+    "lstm_bias_ih",
+    "lstm_hidden_size",
+    "lstm_input_size",
+    "lstm_weight_hh",
+    "lstm_weight_ih",
+    "num_mlp_layers",
+    "obs_dim",
+    "obs_scale",
+    "obs_scale_folded"
+  ],
+  "notes": [
+    "obs is the policy group only (49); privileged terms are teacher-side.",
+    "peg_leg_one_hot (45:49) is [FL, FR, RL, RR]; healthy = all zeros. The student SEES the injured leg \u2014 it is not proprioception-only.",
+    "The train.normalize obs scale is inside every artifact: baked into the .pt/.onnx graph, folded into lstm_weight_ih in the .npz. Feed RAW obs.",
+    "Policy output is raw action (teacher units); mse_norm is a training loss scale only. target_q = default_q + 0.25 * action.",
+    "Reset the LSTM hidden/cell at every episode start (stand-up handover)."
+  ],
+  "exported_utc": "2026-09-16T06:58:29.790284Z"
+}

@@ -51,13 +51,7 @@ def _stdin_pressed() -> bool:
 
 
 def _flush_stdin():
-    """시작 전에 tty 입력 버퍼를 비웁니다.
 
-    명령 입력 후 Enter 를 한 번 더 눌렀거나 붙여넣기에 개행이 딸려 오면
-    그 개행이 버퍼에 남아, 첫 _stdin_pressed() 가 곧바로 비상정지로
-    오인합니다 (실측: hang 시작 즉시 '사용자 중단'). e-stop 은 시작 이후의
-    Enter 만 받아야 하므로 여기서 묵은 입력을 버립니다.
-    """
     if not _STDIN_IS_TTY:
         return
     try:
@@ -79,9 +73,6 @@ class Deployer:
         self.est = est
         self.args = args
         self.last_print = 0.0
-        # 부상 파라미터 probe: 모델 옆에 injury_probe.npz 가 있으면 로드.
-        # (시뮬에서 학습한 선형 해독기 W(K,256), b(K), names(K) —
-        #  scripts/train_injury_probe.py 로 생성. 없으면 표시 생략.)
         self.probe = None
         policy_path = getattr(args, "policy", None)
         if policy_path:
@@ -108,9 +99,6 @@ class Deployer:
     # ---- 공통 루프 유틸 --------------------------------------------------
 
     def _step_estimator(self, state, dt):
-        # 첫 상태 패킷이 도착하기 전에는 quat 가 [0,0,0,0]입니다. 그대로
-        # KF 에 넣으면 회전행렬이 NaN 이 되고 공분산까지 오염돼 이후 모든
-        # 출력이 NaN 으로 남으므로, 유효한 자세가 올 때까지 스킵합니다.
         if np.linalg.norm(state.quat_wxyz) < 0.5:
             return {
                 "v_body": np.zeros(3), "v_world": np.zeros(3),
@@ -148,10 +136,6 @@ class Deployer:
 
     def _estimator_warmup(self, seconds=1.0):
         for _ in range(int(seconds / C.CONTROL_DT)):
-            # MCU 는 패킷을 보낸 클라이언트에게만 상태를 회신하므로, 아직
-            # 아무 명령도 안 보내는 워밍업에서는 zero-torque 로 상태를
-            # 요청해야 합니다. 없으면 stand_up() 이 시작 자세를 전부 0 으로
-            # 읽어 잘못된 자세에서 보간을 시작합니다.
             self.robot.send_poll()
             state = self.robot.read_state()
             self._step_estimator(state, C.CONTROL_DT)
@@ -196,11 +180,7 @@ class Deployer:
             self._sleep_rest(t0)
 
     def lie_down(self, duration=C.LIE_DOWN_TIME):
-        """정상 종료용: 현재 자세 → 엎드림 자세로 천천히 보간 후 damping 으로 인계.
-
-        damping 직행(Kp=0)은 로봇이 뚝 떨어지듯 주저앉습니다. 여기서는 위치
-        제어를 유지한 채 접힌 자세로 내려간 뒤에 damping 을 걸어 사뿐히
-        앉습니다. Enter 를 누르면 즉시 중단하고 damping 으로 넘어갑니다.
+        """정상 종료용: 현재 자세 → 엎드림 자세로 천천히 보간 후 damping.
         """
         print("[LIE] 천천히 주저앉는 중 (Enter = 건너뛰고 즉시 damping)")
         q0 = self.robot.read_state().q.copy()
@@ -244,16 +224,8 @@ class Deployer:
 
             ramp = _smoothstep(k * C.CONTROL_DT / cmd_ramp)
             cmd = cmd_target * ramp
-            # 학습 명령 분포에 하한이 있는 모델(phase3 student: vx 0.3~1.0)은
-            # 램프가 하한 밑을 통과하면 분포 밖 명령이 LSTM 이력에 쌓입니다.
-            # --vx-floor 로 하한을 주면 전진 명령은 시작부터 그 값 이상입니다
-            # (학습 에피소드도 정지 상태 + cmd>=하한에서 시작하므로 일치).
             if self.args.vx_floor > 0.0 and cmd_target[0] > 0.0:
                 cmd[0] = max(cmd[0], self.args.vx_floor)
-            # base_lin_vel 입력: 이 저장소의 모든 시뮬 검증(sim_test/deploy_core.py,
-            # ROS 스택)은 속도 명령을 그대로 넣는 proxy 방식입니다. 온보드 KF 는
-            # 실보행에서 과소추정이 확인돼(cmd 0.3 에서 0.02~0.15) 기본값은 proxy,
-            # --lin-vel kf 로 추정치를 쓸 수 있습니다 (텔레메트리는 항상 KF).
             if self.args.lin_vel == "cmd":
                 lin_vel_obs = np.array([cmd[0], cmd[1], 0.0], dtype=np.float32)
             else:
@@ -262,9 +234,6 @@ class Deployer:
             action = policy(obs)
             last_action = action
             q_des = C.DEFAULT_JOINT_POS + C.ACTION_SCALE * action
-            # 기립 게인(STAND_KP=60)에서 정책 게인으로 부드럽게 블렌딩.
-            # 인계 직후 바로 Kp 를 20 으로 떨어뜨리면 아직 하중이 실린 뒷무릎이
-            # 처지면서 정책이 학습 밖 자세에서 시작합니다 (실측: 2026-08-02 로그).
             blend = _smoothstep(k * C.CONTROL_DT / C.GAIN_BLEND_TIME)
             kp_now = self.args.stand_kp + (self.args.kp - self.args.stand_kp) * blend
             kd_now = self.args.stand_kd + (self.args.kd - self.args.stand_kd) * blend
@@ -383,8 +352,8 @@ def main():
         elif args.mode == "walk":
             cmd = clip_command(args.vx, args.vy, args.wz)
             dep.run_policy(policy, cmd, args.duration)
-        # 정상 종료(시간 만료 / 정책 중 Enter)만 여기 도달: 사뿐히 앉기.
-        # 예외 경로(기울임 가드, Ctrl-C)는 아래 finally 의 즉시 damping 으로 감.
+        # 정상 종료(시간 만료 / 정책 중 Enter)
+        # 예외 경로(기울임 가드, Ctrl-C)는 아래 finally 의 즉시 damping 
         dep.lie_down()
     except KeyboardInterrupt:
         print("[STOP] 사용자 중단")

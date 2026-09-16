@@ -12,9 +12,9 @@ CHECKPOINT="$LOG_DIR/model_4999.pt"
 EXPORT_DIR="$LOG_DIR/exported"
 
 echo "========================================================"
-echo "🚀 Starting automated policy export wrapper..."
-echo "📂 Source Checkpoint: $CHECKPOINT"
-echo "📂 Output Target: /home/shw/go1_real/model/"
+echo " Starting automated policy export wrapper..."
+echo " Source Checkpoint: $CHECKPOINT"
+echo " Output Target: /home/shw/go1_real/model/"
 echo "========================================================"
 
 if [ ! -f "$CHECKPOINT" ]; then

@@ -1,0 +1,346 @@
+{
+    "phase": "phase3",
+    "train": {
+        "project_name": "unitree_go1_antalgic",
+        "task": "Template-Go1-Lab-v0",
+        "agent": "rsl_rl_phase3_cfg_entry_point",
+        "num_envs": 2048,
+        "max_iterations": 4000,
+        "seed": 42,
+        "num_steps_per_env": 50,
+        "normalize": {
+            "enable": true,
+            "obs": {
+                "angular_vel": 1.0,
+                "gravity": 1.0,
+                "cmd_vel": 1.0,
+                "joint_pos": 1.0,
+                "joint_vel": 0.23,
+                "action": 1.0
+            },
+            "priv": {
+                "splint_length": 1.0,
+                "linear_vel": 1.0
+            }
+        },
+        "gradient_length": 50,
+        "splint_loss_coef": 1.0,
+        "vel_loss_coef": 1.0,
+        "mse_norm": {
+            "enable": true,
+            "action_mean": [
+                -0.867,
+                0.887,
+                -0.972,
+                1.043,
+                -0.996,
+                -0.972,
+                -0.548,
+                -0.731,
+                2.245,
+                2.127,
+                1.629,
+                1.769
+            ],
+            "action_pstd": 0.7827,
+            "splint_mean": 0.3501,
+            "splint_std": 0.0286,
+            "vel_mean": [
+                0.0009,
+                -0.0034,
+                0.0097
+            ],
+            "vel_pstd": 0.4528
+        }
+    },
+    "environment": {
+        "path": "/home/shw/go1_lod/scripts/rsl_rl/configs/env/antalgic.yaml",
+        "values": {
+            "name": "antalgic",
+            "use_peg_leg_action_mask": true,
+            "peg_leg": {
+                "enabled": true,
+                "grace_steps": 30,
+                "attach": "thigh",
+                "leg_policy": {
+                    "mode": "env_fixed",
+                    "env_fixed": {
+                        "normal": 0.5,
+                        "fl": 0.125,
+                        "fr": 0.125,
+                        "rr": 0.125,
+                        "rl": 0.125
+                    },
+                    "random": {
+                        "normal": 0.5,
+                        "fl": 0.125,
+                        "fr": 0.125,
+                        "rl": 0.125,
+                        "rr": 0.125
+                    }
+                },
+                "calf_policy": {
+                    "mode": "fixed",
+                    "fixed": {
+                        "value": -2.55
+                    },
+                    "random": {
+                        "min_fold": -2.55,
+                        "max_fold": -1.0,
+                        "padding": 0.02
+                    }
+                },
+                "injured_splint_friction_only": true,
+                "splint_length_range": [
+                    0.3,
+                    0.4
+                ],
+                "foot_friction_range": [
+                    0.5,
+                    1.5
+                ],
+                "hip_torque": {
+                    "scale": 1.0,
+                    "weaken_joints": "hip"
+                },
+                "splint_actuator": {
+                    "stiffness": 100.0,
+                    "damping": 1.0
+                }
+            },
+            "actuator": {
+                "type": "pd",
+                "pd": {
+                    "kp": 20.0,
+                    "kd": 0.5,
+                    "effort_limit": 23.7,
+                    "velocity_limit": 30.0,
+                    "friction": 0.0
+                }
+            },
+            "simulation": {
+                "replicate_physics": false,
+                "clone_in_fabric": false,
+                "gpu": {
+                    "gpu_total_aggregate_pairs_capacity": 8388608,
+                    "gpu_found_lost_pairs_capacity": 8388608
+                },
+                "terrain": {
+                    "flat": true,
+                    "curriculum": {
+                        "terrain_levels": null
+                    }
+                },
+                "contact_compliance": {
+                    "enabled": false,
+                    "stiffness": 0.0,
+                    "damping": 2000.0
+                }
+            },
+            "command": {
+                "linear_velocity_x": {
+                    "min": -1.0,
+                    "max": 1.0
+                },
+                "linear_velocity_y_abs": 1.0,
+                "angular_velocity_yaw_abs": 1.0
+            },
+            "observation": {
+                "history_length": 1,
+                "use_height_scan": false,
+                "privileged": {
+                    "enabled": true
+                }
+            },
+            "domain_randomization": {
+                "enabled": true,
+                "ground_friction": {
+                    "enabled": true,
+                    "static_range": [
+                        0.5,
+                        1.5
+                    ],
+                    "dynamic_range": [
+                        0.4,
+                        1.2
+                    ]
+                },
+                "robot_mass": {
+                    "enabled": true,
+                    "body_name": "trunk",
+                    "scale_range": [
+                        0.85,
+                        1.15
+                    ]
+                },
+                "random_push": {
+                    "enabled": true,
+                    "interval_range_s": [
+                        8.0,
+                        12.0
+                    ],
+                    "velocity_x_range": [
+                        -0.5,
+                        0.5
+                    ],
+                    "velocity_y_range": [
+                        -0.5,
+                        0.5
+                    ]
+                },
+                "observation_noise": {
+                    "enabled": true,
+                    "joint_pos_std": 0.02,
+                    "joint_vel_std": 0.02,
+                    "base_ang_vel_std": 0.05,
+                    "projected_gravity_std": 0.05
+                }
+            },
+            "payload": {
+                "enabled": false,
+                "front_payload_kg": 0.0,
+                "front_com_x_m": 0.0,
+                "front_com_z_m": 0.0
+            },
+            "reward": {
+                "task": {
+                    "enabled": true,
+                    "track_linear_velocity_weight": 2.5,
+                    "track_angular_velocity_weight": 0.75,
+                    "linear_velocity_z_weight": -2.0
+                },
+                "gait_tuning": {
+                    "enabled": true,
+                    "feet_air_time_weight": 0.3,
+                    "action_rate_weight": -0.1,
+                    "angular_velocity_xy_weight": -0.1
+                },
+                "energy": {
+                    "torque_penalty_scale": 5,
+                    "dof_acc_penalty_scale": 0.5,
+                    "action_rate_penalty_scale": 0.5
+                },
+                "posture": {
+                    "flat_orientation_weight": 0.0,
+                    "base_height_target": 0.27,
+                    "base_height_weight": -0.15
+                },
+                "calf_contact": {
+                    "enabled": false,
+                    "weight": -0.01,
+                    "force_threshold": 0,
+                    "max_overload": 100.0,
+                    "use_z_only": true
+                },
+                "survival_bonus": {
+                    "enabled": true,
+                    "weight": 0.25
+                },
+                "joint_mirror_symmetry": {
+                    "enabled": false,
+                    "weight": -2.0
+                },
+                "symmetric": {
+                    "enabled": false,
+                    "contact_force_asymmetry": {
+                        "weight": -0.012,
+                        "ramp_duration_steps": 6000
+                    },
+                    "duty_factor_asymmetry": {
+                        "weight": -0.04,
+                        "contact_threshold": 1.0,
+                        "ramp_duration_steps": 6000
+                    },
+                    "diagonal_load_asymmetry": {
+                        "weight": -0.006,
+                        "ramp_duration_steps": 6000
+                    },
+                    "front_rear_load_distribution": {
+                        "weight": -0.0025,
+                        "target_front_fraction": 0.55,
+                        "tolerance": 0.06,
+                        "ramp_duration_steps": 6000
+                    },
+                    "trot_synchronization": {
+                        "weight": 0.12,
+                        "ramp_duration_steps": 6000
+                    }
+                },
+                "injury": {
+                    "enabled": true,
+                    "penalty_pain": {
+                        "enabled": true,
+                        "weight": -8.0,
+                        "threshold_bw": 0.01,
+                        "scale_bw": 1.0,
+                        "exponent": 2.0,
+                        "include_calf": true,
+                        "include_splint": true,
+                        "splint_transmission": 0.5,
+                        "body_weight_n": null
+                    }
+                }
+            },
+            "termination": {
+                "root_too_low": {
+                    "enabled": true,
+                    "minimum_height": 0.15
+                },
+                "bad_orientation": {
+                    "enabled": true,
+                    "limit_angle": 0.8
+                }
+            }
+        }
+    },
+    "checkpoint": {
+        "mode": "distill",
+        "teacher": "/home/shw/go1_lod/scripts/rsl_rl/logs/unitree_go1_antalgic/P2_at_dbg/model_7998.pt",
+        "student": "",
+        "load_optimizer": false,
+        "reset_iteration": true,
+        "reset_noise_std": false
+    },
+    "common": {
+        "rsl_logger": "tensorboard",
+        "device": "cuda:0"
+    },
+    "evaluation": {
+        "peg_leg": "normal"
+    },
+    "exploration": {
+        "noise_std_type": "log",
+        "init_noise_std": 0.05,
+        "min_action_std": 0.001,
+        "enforce_min_std": true
+    },
+    "rsl_logger": "tensorboard",
+    "runtime": {
+        "run_name": "2026_09_13_14_33_16_phase3_s42_P3-final",
+        "run_tag": "P3-final",
+        "phase_config_path": "/home/shw/go1_lod/scripts/rsl_rl/configs/phase/3/phase3.yaml",
+        "log_dir": "/home/shw/go1_lod/scripts/rsl_rl/logs/unitree_go1_antalgic/2026_09_13_14_33_16_phase3_s42_P3-final",
+        "cli_args": {
+            "phase_config_path": "configs/phase/3/phase3.yaml",
+            "common_config_path": "/home/shw/go1_lod/scripts/rsl_rl/configs/common.yaml",
+            "log_config_path": "/home/shw/go1_lod/scripts/rsl_rl/configs/logger.yaml",
+            "run_tag": "P3-final",
+            "debug_obs": false,
+            "debug_obs_envs": 10,
+            "headless": true,
+            "livestream": -1,
+            "enable_cameras": false,
+            "xr": false,
+            "device": "cuda:0",
+            "cpu": false,
+            "verbose": false,
+            "info": false,
+            "experience": "",
+            "rendering_mode": null,
+            "kit_args": "",
+            "anim_recording_enabled": false,
+            "anim_recording_start_time": 0,
+            "anim_recording_stop_time": 10
+        }
+    }
+}

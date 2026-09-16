@@ -35,6 +35,23 @@ ONNX_GATE_ORDER = "iofc"
 TORCH_GATE_ORDER = "ifgo"
 
 
+# Ops this converter actually reproduces. Anything else on the data path (a Mul/Add
+# from a baked-in observation scale, for instance) would be silently dropped and the
+# bundle would be quietly wrong on the robot, so refuse instead.
+KNOWN_OPS = {"Gemm", "Elu", "LSTM", "Constant", "Squeeze", "Unsqueeze", "Reshape", "Identity"}
+
+
+def _reject_unknown_ops(graph):
+    unknown = sorted({n.op_type for n in graph.node} - KNOWN_OPS)
+    if unknown:
+        sys.exit(
+            f"ONNX graph contains ops this converter does not implement: {unknown}.\n"
+            "The resulting .npz would drop them silently. If this is a Phase-3 student "
+            "(the obs scale is a Mul node), use scripts/export_p3_student.py instead — "
+            "it writes policy_numpy.npz straight from the checkpoint."
+        )
+
+
 def _initializers(graph):
     return {t.name: numpy_helper.to_array(t) for t in graph.initializer}
 
@@ -162,6 +179,7 @@ def main():
     model = onnx.load(args.onnx_path)
     graph = model.graph
     init = _initializers(graph)
+    _reject_unknown_ops(graph)
 
     obs_dim, action_dim = _io_dims(graph)
     layers = _mlp_layers(graph, init)
