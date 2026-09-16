@@ -78,20 +78,37 @@ class Deployer:
         self.last_print = 0.0
         self.injured_leg = args.injured_leg
         self.one_hot = peg_leg_one_hot(self.injured_leg)
+        self._aux_ema = None
         if self.injured_leg is not None:
             print("[INJURY] %s 다리 부목 모드 — one_hot=%s, calf action 마스킹, "
                   "고정각 %.2f rad" % (C.LEG_NAMES[self.injured_leg],
                                       self.one_hot.astype(int).tolist(),
                                       C.SPLINT_CALF_ANGLE))
 
-    @staticmethod
-    def _aux_msg(policy):
-        """정책 보조 헤드의 부목 길이 / 몸통 선속도 추정."""
-        est = policy.estimate() if hasattr(policy, "estimate") else None
+    def _aux_update(self, est, dt):
+        """보조 헤드 추정치를 매 스텝 EMA(시정수 AUX_EMA_TAU)로 평활."""
         if est is None:
+            return
+        y = np.concatenate([[est[0]], est[1]]).astype(np.float64)
+        if self._aux_ema is None:
+            self._aux_ema = y
+        else:
+            self._aux_ema += min(1.0, dt / C.AUX_EMA_TAU) * (y - self._aux_ema)
+
+    def _aux_msg(self, elapsed):
+        """평활된 부목 길이 / 몸통 선속도 추정.
+
+        인계 직후에는 LSTM 이 아직 이력을 쌓는 중이라 추정이 출렁입니다 (구 모델
+        실측: 인계 구간에 가짜 부상 스파이크 후 소멸). 게인 블렌딩 + 1초가 지날
+        때까지는 값에 (수렴 중) 을 붙입니다.
+        """
+        if self._aux_ema is None:
             return None
-        L, v = est
-        return "L_hat=%.3f m  v_hat=(%+.2f,%+.2f,%+.2f)" % (L, v[0], v[1], v[2])
+        L, v = self._aux_ema[0], self._aux_ema[1:]
+        msg = "L_hat=%.3f m  v_hat=(%+.2f,%+.2f,%+.2f)" % (L, v[0], v[1], v[2])
+        if elapsed < self.args.gain_blend + 1.0:
+            msg += "  (수렴 중)"
+        return msg
 
     # ---- 공통 루프 유틸 --------------------------------------------------
 
@@ -195,62 +212,67 @@ class Deployer:
         # 정책 인계 시점에 상태를 리셋합니다 (feed-forward / selftest 람다는 no-op).
         if hasattr(policy, "reset"):
             policy.reset()
+        self._aux_ema = None  # 추정 평활도 에피소드마다 새로 시작
         log = None
         if getattr(self.args, "log_npz", None):
             log = {k: [] for k in ("t", "q", "dq", "q_des", "action",
                                    "ff", "quat", "gyro", "cmd", "h", "aux")}
         last_action = np.zeros(C.NUM_ACTIONS)
         n = int(duration / C.CONTROL_DT)
-        for k in range(n):
-            t0 = time.monotonic()
-            if _stdin_pressed():
-                print("[POLICY] 사용자 정지")
-                break
+        try:
+            for k in range(n):
+                t0 = time.monotonic()
+                if _stdin_pressed():
+                    print("[POLICY] 사용자 정지")
+                    break
 
-            state = self.robot.read_state()
-            if not self._tilt_ok(state):
-                raise RuntimeError("tilt guard during policy")
+                state = self.robot.read_state()
+                if not self._tilt_ok(state):
+                    raise RuntimeError("tilt guard during policy")
 
-            ramp = _smoothstep(k * C.CONTROL_DT / cmd_ramp)
-            cmd = cmd_target * ramp
-            if self.args.vx_floor > 0.0 and cmd_target[0] > 0.0:
-                cmd[0] = max(cmd[0], self.args.vx_floor)
-            obs = build_obs(state, cmd, last_action, self.one_hot)
-            action = policy(obs)
-            q_des = C.DEFAULT_JOINT_POS + C.ACTION_SCALE * action
-            q_des, action = self._apply_splint(q_des, action)
-            last_action = action
-            blend = _smoothstep(k * C.CONTROL_DT / C.GAIN_BLEND_TIME)
-            kp_now = self.args.stand_kp + (self.args.kp - self.args.stand_kp) * blend
-            kd_now = self.args.stand_kd + (self.args.kd - self.args.stand_kd) * blend
-            self.robot.send_positions(q_des, kp_now, kd_now)
+                ramp = _smoothstep(k * C.CONTROL_DT / cmd_ramp)
+                cmd = cmd_target * ramp
+                if self.args.vx_floor > 0.0 and cmd_target[0] > 0.0:
+                    cmd[0] = max(cmd[0], self.args.vx_floor)
+                obs = build_obs(state, cmd, last_action, self.one_hot)
+                action = policy(obs)
+                q_des = C.DEFAULT_JOINT_POS + C.ACTION_SCALE * action
+                q_des, action = self._apply_splint(q_des, action)
+                last_action = action
+                est = policy.estimate() if hasattr(policy, "estimate") else None
+                blend = _smoothstep(k * C.CONTROL_DT / self.args.gain_blend)
+                kp_now = self.args.stand_kp + (self.args.kp - self.args.stand_kp) * blend
+                kd_now = self.args.stand_kd + (self.args.kd - self.args.stand_kd) * blend
+                self.robot.send_positions(q_des, kp_now, kd_now)
 
-            if log is not None:
-                log["t"].append(t0)
-                log["q"].append(state.q.copy())
-                log["dq"].append(state.dq.copy())
-                log["q_des"].append(q_des.copy())
-                log["action"].append(np.asarray(action, dtype=np.float32))
-                log["ff"].append(state.foot_force.copy())
-                log["quat"].append(state.quat_wxyz.copy())
-                log["gyro"].append(state.gyro.copy())
-                log["cmd"].append(cmd.copy())
-                log["h"].append(policy.hidden.copy())   # LSTM latent
-                est = policy.estimate()
-                if est is not None:
-                    log["aux"].append(np.concatenate([[est[0]], est[1]]))
+                if log is not None:
+                    log["t"].append(t0)
+                    log["q"].append(state.q.copy())
+                    log["dq"].append(state.dq.copy())
+                    log["q_des"].append(q_des.copy())
+                    log["action"].append(np.asarray(action, dtype=np.float32))
+                    log["ff"].append(state.foot_force.copy())
+                    log["quat"].append(state.quat_wxyz.copy())
+                    log["gyro"].append(state.gyro.copy())
+                    log["cmd"].append(cmd.copy())
+                    log["h"].append(policy.hidden.copy())   # LSTM latent
+                    if est is not None:
+                        log["aux"].append(np.concatenate([[est[0]], est[1]]))
 
-            self._telemetry(time.monotonic(), state, action, cmd,
-                            extra=self._aux_msg(policy))
-            elapsed = time.monotonic() - t0
-            if elapsed > C.CONTROL_DT * (1.0 + C.LOOP_OVERRUN_LIMIT):
-                print(f"[WARN] 루프 지연 {elapsed * 1000:.1f} ms")
-            self._sleep_rest(t0)
-
-        if log is not None:
-            np.savez(self.args.log_npz,
-                     **{k: np.asarray(v) for k, v in log.items() if v})
-            print(f"[LOG] {len(log['t'])} steps -> {self.args.log_npz}")
+                self._aux_update(est, C.CONTROL_DT)
+                self._telemetry(time.monotonic(), state, action, cmd,
+                                extra=self._aux_msg(k * C.CONTROL_DT))
+                elapsed = time.monotonic() - t0
+                if elapsed > C.CONTROL_DT * (1.0 + C.LOOP_OVERRUN_LIMIT):
+                    print(f"[WARN] 루프 지연 {elapsed * 1000:.1f} ms")
+                self._sleep_rest(t0)
+        finally:
+            # 기울임 가드 / Ctrl-C 로 루프가 끊겨도 로그는 남깁니다 — 낙상 직전
+            # 데이터가 진단에 가장 중요합니다 (실측: 유실 사고 1회).
+            if log is not None and log["t"]:
+                np.savez(self.args.log_npz,
+                         **{k: np.asarray(v) for k, v in log.items() if v})
+                print(f"[LOG] {len(log['t'])} steps -> {self.args.log_npz}")
 
     def dry_run(self, duration):
         print("[DRY] 모터 명령 없음 (zero-torque 상태요청만 송신) — "
@@ -299,6 +321,9 @@ def main():
     ap.add_argument("--vx-floor", type=float, default=0.0,
                     help="전진 명령 램프의 하한. 학습 분포에 하한이 있는 모델용 "
                          "(phase3 student 는 0.3 권장)")
+    ap.add_argument("--gain-blend", type=float, default=C.GAIN_BLEND_TIME,
+                    help="인계 시 STAND_KP->KP 블렌딩 시간(s). 인계 충격은 정책 행동이 "
+                         "기립 강성(Kp60)에서 실행돼서 생기므로 짧게 둡니다 (실측 1.0)")
     ap.add_argument("--stand-kp", type=float, default=C.STAND_KP,
                     help="기립/유지 게인. 60=수평 기립(실측), 30=부드럽지만 뒷다리 처짐")
     ap.add_argument("--stand-kd", type=float, default=C.STAND_KD)

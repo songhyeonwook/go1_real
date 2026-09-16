@@ -75,6 +75,7 @@ def _mock_loop(injured_leg=None):
 
     args = argparse.Namespace(mock=True, kp=C.KP, kd=C.KD, vx_floor=0.0,
                               stand_kp=C.STAND_KP, stand_kd=C.STAND_KD,
+                              gain_blend=C.GAIN_BLEND_TIME,
                               injured_leg=injured_leg, log_npz=None)
     robot = MockGo1Interface()
     dep = Deployer(robot, args)

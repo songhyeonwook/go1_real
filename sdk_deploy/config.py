@@ -60,7 +60,7 @@ KP = 20.0
 KD = 0.5
 STAND_KP = 60.0
 STAND_KD = 1.0
-GAIN_BLEND_TIME = 3.0        # 정책 인계 후 STAND_KP → KP 블렌딩 시간 (s)
+GAIN_BLEND_TIME = 1.0        # 정책 인계 후 STAND_KP -> KP 블렌딩 시간 (s). 실측 권장값
 
 # 정상 종료 시 천천히 주저앉기(lie_down) — damping 직행은 Kp=0 이라 뚝 떨어짐.
 # 비상정지/기울임 가드는 여전히 즉시 damping (제어된 하강이 낙하와 싸우면 안 됨).
@@ -121,6 +121,9 @@ SDK_LOCAL_PORT = 8080
 SDK_ROBOT_IP = "192.168.123.10"
 SDK_ROBOT_PORT = 8007
 POWER_PROTECT_LEVEL = 5      # 1(보수적)~10; 처음엔 낮게
+
+# 보조 헤드 추정 표시 (L_hat / v_hat) — 50 Hz 순간값은 출렁이므로 평활해서 보여줍니다
+AUX_EMA_TAU = 1.0            # 이동평균 시정수 (s)
 
 # 안전 가드
 TILT_LIMIT_RAD = 0.7         # roll/pitch 초과 시 즉시 damping
