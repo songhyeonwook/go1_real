@@ -1,4 +1,8 @@
-"""실물 Go1 배포 상수 — 전부 phase1 체크포인트의 params/env.yaml 과 1:1 대응.
+"""실물 Go1 배포 상수 — go1_lod 학습 설정(configs/env/antalgic.yaml + Isaac Lab
+UNITREE_GO1_CFG)과 1:1 대응합니다.
+
+내보낸 번들의 `policy_io.json` 이 관측 레이아웃·action scale·제어 게인을 함께
+싣고 있습니다. 이 파일과 그 파일이 다르면 이 파일이 틀린 것입니다.
 """
 
 import numpy as np
@@ -25,13 +29,14 @@ SDK_TO_ISAAC = np.array([ISAAC_JOINT_NAMES.index(n) for n in SDK_JOINT_NAMES])
 
 # 다리 순서는 이 저장소 전체와 동일하게 FL, FR, RL, RR 로 통일합니다.
 LEG_NAMES = ["FL", "FR", "RL", "RR"]
+NUM_LEGS = len(LEG_NAMES)
 # 다리 i 의 (hip, thigh, calf) 관절이 Isaac 벡터에서 차지하는 인덱스
 LEG_JOINT_IDS = np.array([[i, 4 + i, 8 + i] for i in range(4)])
 # SDK footForce 배열은 [FR, FL, RR, RL] → FL,FR,RL,RR 로 재배열
 FOOT_FORCE_SDK_TO_LEG = np.array([1, 0, 3, 2])
 
 # ---------------------------------------------------------------------------
-# 기본 자세 / 액션 (env.yaml: init_state.joint_pos, actions.joint_pos)
+# 기본 자세 / 액션 (UNITREE_GO1_CFG.init_state, actions.joint_pos.scale)
 # ---------------------------------------------------------------------------
 # 주의: 뒷다리 thigh 는 1.0 으로 앞다리(0.8)와 다릅니다.
 DEFAULT_JOINT_POS = np.array([
@@ -39,16 +44,16 @@ DEFAULT_JOINT_POS = np.array([
     0.8, 0.8, 1.0, 1.0,         # thighs (front 0.8 / rear 1.0)
     -1.5, -1.5, -1.5, -1.5,     # calves
 ])
-# calf_pos_abs 관측의 nominal (mdp/observations.py: calf_pos_nominal_rel).
-# 건강한 로봇 배포에서는 default 와 같습니다 (부상 시에만 lock 각으로 바뀜).
-NOMINAL_CALF_POS = np.array([-1.5, -1.5, -1.5, -1.5])  # FL, FR, RL, RR
-CALF_IDS_ISAAC = np.array([8, 9, 10, 11])              # FL, FR, RL, RR
-
 ACTION_SCALE = 0.25          # actions.joint_pos.scale
 # target_q = DEFAULT_JOINT_POS + ACTION_SCALE * action (use_default_offset)
 
+# 부목 고정각 (antalgic.yaml peg_leg.calf_policy.fixed.value). 학습에서 부상 다리의
+# calf 는 이 각으로 잠기고 그 관절의 action 은 0 으로 마스킹됩니다 — 실기에서도
+# 같은 처리가 필요합니다 (deploy.py 의 injured_leg 경로).
+SPLINT_CALF_ANGLE = -2.55
+
 # ---------------------------------------------------------------------------
-# 제어 (env.yaml: sim.dt=0.005, decimation=4, actuators: DCMotor Kp/Kd)
+# 제어 (sim.dt=0.005 x decimation 4 = 50 Hz, antalgic.yaml actuator.pd)
 # ---------------------------------------------------------------------------
 CONTROL_DT = 0.02            # 정책 50 Hz
 KP = 20.0
@@ -86,50 +91,27 @@ SOFT_JOINT_LIMITS = np.stack(
 )
 
 # ---------------------------------------------------------------------------
-# 속도 명령 한계 (env.yaml commands.ranges — 학습 분포 밖 금지)
+# 속도 명령 한계 (antalgic.yaml command — 학습 분포 밖 금지)
 # ---------------------------------------------------------------------------
-CMD_VX_RANGE = (0.0, 1.0)    # 학습은 0.1~1.0; 0 은 램프업 통과점으로만 사용
-CMD_VY_RANGE = (0.0, 0.0)
-CMD_WZ_RANGE = (-0.15, 0.15)
+# 학습 분포는 vx [-1, 1], vy +-1, wz +-1 입니다. 아래는 그 안쪽의 보수적인
+# 실기 운용 범위 — 넓히려면 학습 분포까지만 올리세요.
+CMD_VX_RANGE = (0.0, 1.0)
+CMD_VY_RANGE = (-0.3, 0.3)
+CMD_WZ_RANGE = (-0.5, 0.5)
 
 # ---------------------------------------------------------------------------
-# 다리 기하 (Go1 URDF)
+# 관측 — student 는 policy 그룹만 소비합니다 (privileged 는 teacher 전용)
 # ---------------------------------------------------------------------------
-HIP_OFFSETS = np.array([     # trunk → hip roll 축 원점 (body frame), FL FR RL RR
-    [0.1881, 0.04675, 0.0],
-    [0.1881, -0.04675, 0.0],
-    [-0.1881, 0.04675, 0.0],
-    [-0.1881, -0.04675, 0.0],
-])
-LEG_SIDE_SIGN = np.array([1.0, -1.0, 1.0, -1.0])  # 왼쪽 +y
-L_HIP = 0.08                 # hip → thigh 횡방향 오프셋
-L_THIGH = 0.213
-L_CALF = 0.213
-FOOT_RADIUS = 0.02
-
-# ---------------------------------------------------------------------------
-# 상태 추정기
-# ---------------------------------------------------------------------------
-CONTACT_FORCE_THRESHOLD = 20.0 
-FOOT_FORCE_BIAS = np.array([125.0, 114.0, 114.0, 116.0])  # FL, FR, RL, RR
-EST_NOISE_P_IMU = 0.02           # process: 위치
-EST_NOISE_V_IMU = 0.02           # process: 속도
-EST_NOISE_P_FOOT = 0.002         # process: 발 위치
-EST_SENSOR_P_FOOT = 0.005        # measurement: 다리 운동학 발 위치
-EST_SENSOR_V_FOOT = 0.1          # measurement: 다리 운동학 발 속도
-EST_SENSOR_H_FOOT = 0.01         # measurement: 발 높이(평지 가정)
-EST_SWING_INFLATION = 1e4        # 스윙 발 노이즈 팽창 계수
-
-GRAVITY = np.array([0.0, 0.0, -9.81])
-
-# ---------------------------------------------------------------------------
-# 관측 — teacher actor 는 두 그룹을 연결
-# ---------------------------------------------------------------------------
-POLICY_OBS_DIM = 52
-PRIVILEGED_OBS_DIM = 7
-OBS_DIM = POLICY_OBS_DIM + PRIVILEGED_OBS_DIM   # actor 입력 59
-HEALTHY_PRIVILEGED_TAIL = np.zeros(PRIVILEGED_OBS_DIM)
+# 레이아웃은 observation.py 의 docstring 참고. 학습 측 기준은 go1_lod
+# mdp/obs_normalizer.py 이고, 내보낸 policy_io.json 이 같은 값을 싣습니다.
+OBS_DIM = 49
 NUM_ACTIONS = 12
+
+# ---------------------------------------------------------------------------
+# 접지 판정 (텔레메트리 전용 — 관측에는 들어가지 않습니다)
+# ---------------------------------------------------------------------------
+CONTACT_FORCE_THRESHOLD = 20.0
+FOOT_FORCE_BIAS = np.array([125.0, 114.0, 114.0, 116.0])  # FL, FR, RL, RR
 
 # ---------------------------------------------------------------------------
 # 통신 (unitree_legged_sdk low-level)

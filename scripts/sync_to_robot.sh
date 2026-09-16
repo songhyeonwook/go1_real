@@ -23,6 +23,8 @@ rsync -avh --progress $DRY \
   --exclude '.DS_Store' \
   --exclude 'events.out.tfevents.*' \
   --exclude 'outputs/' \
+  --exclude 'sdk_deploy/model/*/eval_*' \
+  --exclude 'sdk_deploy/model/*/*.png' \
   "$SRC" "$ROBOT:$DEST/"
 
 [[ -n "$DRY" ]] && echo && echo "DRY RUN only. Re-run with --go to transfer."

@@ -1,4 +1,4 @@
-"""phase1 정책 실물 Go1 배포 메인 루프.
+"""Phase-3 student 실물 Go1 배포 메인 루프.
 
 모드 (반드시 이 순서로 검증할 것 — README 의 안전 절차 참고):
   dry-run : 모터 명령 없이 관측/추정치만 출력 (상태 회신을 위한 zero-torque
@@ -14,8 +14,13 @@
 
 사용 예:
   python3 deploy.py --mode dry-run --mock
-  python3 deploy.py --mode hang --policy exported/policy.onnx
-  python3 deploy.py --mode walk --policy exported/policy.onnx --vx 0.4
+  python3 deploy.py --mode hang  --policy model/P3-final/exported/policy_numpy.npz
+  python3 deploy.py --mode walk  --policy model/P3-final/exported/policy_numpy.npz --vx 0.4
+  python3 deploy.py --mode walk  --policy ... --injured-leg FR   # 부목 착용 시
+
+부상 배포: --injured-leg 를 주면 (1) 관측의 peg_leg_one_hot 이 그 다리로 켜지고,
+(2) 해당 calf 는 학습과 동일하게 action 이 마스킹되어 부목 고정각으로 유지됩니다.
+물리적으로 부목을 채운 다리와 반드시 일치시켜야 합니다.
 """
 
 import os
@@ -31,8 +36,7 @@ import time
 import numpy as np
 
 import config as C
-from observation import build_obs, clip_command
-from state_estimator import LinearKFStateEstimator
+from observation import build_obs, clip_command, peg_leg_one_hot
 
 
 # tty 가 아니면(파이프/백그라운드 실행) Enter e-stop 을 비활성화합니다 —
@@ -68,47 +72,48 @@ def _smoothstep(t: float) -> float:
 
 
 class Deployer:
-    def __init__(self, robot, est, args):
+    def __init__(self, robot, args):
         self.robot = robot
-        self.est = est
         self.args = args
         self.last_print = 0.0
-        self.probe = None
-        policy_path = getattr(args, "policy", None)
-        if policy_path:
-            p = os.path.join(os.path.dirname(os.path.abspath(policy_path)),
-                             "injury_probe.npz")
-            if os.path.exists(p):
-                data = np.load(p)
-                self.probe = {
-                    "W": data["W"].astype(np.float32),
-                    "b": data["b"].astype(np.float32),
-                    "names": [str(n) for n in data["names"]],
-                }
-                print("[PROBE] injury_probe.npz 로드 — 실시간 부상 추정 표시: "
-                      + ", ".join(self.probe["names"]))
+        self.injured_leg = args.injured_leg
+        self.one_hot = peg_leg_one_hot(self.injured_leg)
+        if self.injured_leg is not None:
+            print("[INJURY] %s 다리 부목 모드 — one_hot=%s, calf action 마스킹, "
+                  "고정각 %.2f rad" % (C.LEG_NAMES[self.injured_leg],
+                                      self.one_hot.astype(int).tolist(),
+                                      C.SPLINT_CALF_ANGLE))
 
-    def _probe_msg(self, policy):
-        h = getattr(policy, "hidden", None)
-        if self.probe is None or h is None:
+    @staticmethod
+    def _aux_msg(policy):
+        """정책 보조 헤드의 부목 길이 / 몸통 선속도 추정."""
+        est = policy.estimate() if hasattr(policy, "estimate") else None
+        if est is None:
             return None
-        y = self.probe["W"] @ h + self.probe["b"]
-        return " ".join("%s=%+.2f" % (n, v)
-                        for n, v in zip(self.probe["names"], y))
+        L, v = est
+        return "L_hat=%.3f m  v_hat=(%+.2f,%+.2f,%+.2f)" % (L, v[0], v[1], v[2])
 
     # ---- 공통 루프 유틸 --------------------------------------------------
 
-    def _step_estimator(self, state, dt):
-        if np.linalg.norm(state.quat_wxyz) < 0.5:
-            return {
-                "v_body": np.zeros(3), "v_world": np.zeros(3),
-                "p_world": np.zeros(3), "contact_count": 0,
-            }
-        contact = (state.foot_force - C.FOOT_FORCE_BIAS) > C.CONTACT_FORCE_THRESHOLD
-        return self.est.update(
-            state.quat_wxyz, state.gyro, state.accel,
-            state.q, state.dq, contact, dt,
-        )
+    def _contact_count(self, state):
+        return int(((state.foot_force - C.FOOT_FORCE_BIAS)
+                    > C.CONTACT_FORCE_THRESHOLD).sum())
+
+    def _apply_splint(self, q_des, action):
+        """부상 calf 를 학습과 같게 처리 — action 마스킹 + 고정각 유지.
+
+        학습(go1_lab_env.step)은 부상 calf 의 action 을 0 으로 만든 뒤 관절 target
+        을 lock angle 로 덮어씁니다. 관측의 last_action 도 마스킹 **후** 값이므로
+        여기서 action 자체를 0 으로 되돌려 돌려줍니다.
+        """
+        if self.injured_leg is None:
+            return q_des, action
+        calf = 8 + self.injured_leg
+        action = action.copy()
+        action[calf] = 0.0
+        q_des = q_des.copy()
+        q_des[calf] = C.SPLINT_CALF_ANGLE
+        return q_des, action
 
     def _tilt_ok(self, state) -> bool:
         roll, pitch = state.rpy[0], state.rpy[1]
@@ -118,14 +123,12 @@ class Deployer:
             return False
         return True
 
-    def _telemetry(self, now, state, est_out, action=None, cmd=None, extra=None):
+    def _telemetry(self, now, state, action=None, cmd=None, extra=None):
         if now - self.last_print < 1.0:
             return
         self.last_print = now
-        v = est_out["v_body"]
-        msg = (f"v=({v[0]:+.2f},{v[1]:+.2f},{v[2]:+.2f}) "
-               f"rpy=({state.rpy[0]:+.2f},{state.rpy[1]:+.2f}) "
-               f"contact={est_out['contact_count']}")
+        msg = (f"rpy=({state.rpy[0]:+.2f},{state.rpy[1]:+.2f}) "
+               f"contact={self._contact_count(state)}")
         if cmd is not None:
             msg += f" cmd=({cmd[0]:.2f},{cmd[2]:+.2f})"
         if action is not None:
@@ -133,13 +136,6 @@ class Deployer:
         if extra:
             msg += "\n    [EST] " + extra
         print(msg, flush=True)
-
-    def _estimator_warmup(self, seconds=1.0):
-        for _ in range(int(seconds / C.CONTROL_DT)):
-            self.robot.send_poll()
-            state = self.robot.read_state()
-            self._step_estimator(state, C.CONTROL_DT)
-            time.sleep(C.CONTROL_DT if not self.args.mock else 0.0)
 
     # ---- 시퀀스 ----------------------------------------------------------
 
@@ -155,7 +151,6 @@ class Deployer:
             s = _smoothstep((k + 1) / n)
             q_des = (1.0 - s) * q0 + s * C.DEFAULT_JOINT_POS
             state = self.robot.read_state()
-            self._step_estimator(state, C.CONTROL_DT)
             if not self._tilt_ok(state):
                 raise RuntimeError("tilt guard during stand-up")
             self.robot.send_positions(q_des, self.args.stand_kp, self.args.stand_kd)
@@ -170,13 +165,12 @@ class Deployer:
             if _stdin_pressed():
                 raise KeyboardInterrupt
             state = self.robot.read_state()
-            out = self._step_estimator(state, C.CONTROL_DT)
             if not self._tilt_ok(state):
                 raise RuntimeError("tilt guard during hold")
             self.robot.send_positions(
                 C.DEFAULT_JOINT_POS, self.args.stand_kp, self.args.stand_kd
             )
-            self._telemetry(time.monotonic(), state, out)
+            self._telemetry(time.monotonic(), state)
             self._sleep_rest(t0)
 
     def lie_down(self, duration=C.LIE_DOWN_TIME):
@@ -192,7 +186,6 @@ class Deployer:
             s = _smoothstep((k + 1) / n)
             q_des = (1.0 - s) * q0 + s * C.LIE_DOWN_POS
             state = self.robot.read_state()
-            self._step_estimator(state, C.CONTROL_DT)
             self.robot.send_positions(q_des, C.LIE_DOWN_KP, C.LIE_DOWN_KD)
             self._sleep_rest(t0)
 
@@ -205,20 +198,16 @@ class Deployer:
         log = None
         if getattr(self.args, "log_npz", None):
             log = {k: [] for k in ("t", "q", "dq", "q_des", "action",
-                                   "ff", "quat", "gyro", "v_kf", "cmd", "h")}
+                                   "ff", "quat", "gyro", "cmd", "h", "aux")}
         last_action = np.zeros(C.NUM_ACTIONS)
         n = int(duration / C.CONTROL_DT)
-        t_prev = time.monotonic()
         for k in range(n):
             t0 = time.monotonic()
-            dt = np.clip(t0 - t_prev, 0.5 * C.CONTROL_DT, 2 * C.CONTROL_DT)
-            t_prev = t0
             if _stdin_pressed():
                 print("[POLICY] 사용자 정지")
                 break
 
             state = self.robot.read_state()
-            out = self._step_estimator(state, dt)
             if not self._tilt_ok(state):
                 raise RuntimeError("tilt guard during policy")
 
@@ -226,14 +215,11 @@ class Deployer:
             cmd = cmd_target * ramp
             if self.args.vx_floor > 0.0 and cmd_target[0] > 0.0:
                 cmd[0] = max(cmd[0], self.args.vx_floor)
-            if self.args.lin_vel == "cmd":
-                lin_vel_obs = np.array([cmd[0], cmd[1], 0.0], dtype=np.float32)
-            else:
-                lin_vel_obs = out["v_body"]
-            obs = build_obs(state, lin_vel_obs, cmd, last_action)
+            obs = build_obs(state, cmd, last_action, self.one_hot)
             action = policy(obs)
-            last_action = action
             q_des = C.DEFAULT_JOINT_POS + C.ACTION_SCALE * action
+            q_des, action = self._apply_splint(q_des, action)
+            last_action = action
             blend = _smoothstep(k * C.CONTROL_DT / C.GAIN_BLEND_TIME)
             kp_now = self.args.stand_kp + (self.args.kp - self.args.stand_kp) * blend
             kd_now = self.args.stand_kd + (self.args.kd - self.args.stand_kd) * blend
@@ -248,21 +234,22 @@ class Deployer:
                 log["ff"].append(state.foot_force.copy())
                 log["quat"].append(state.quat_wxyz.copy())
                 log["gyro"].append(state.gyro.copy())
-                log["v_kf"].append(out["v_body"].copy())
                 log["cmd"].append(cmd.copy())
-                h = getattr(policy, "hidden", None)
-                if h is not None:
-                    log["h"].append(h.copy())  # LSTM 상태 — probe 학습/부상 추정용
+                log["h"].append(policy.hidden.copy())   # LSTM latent
+                est = policy.estimate()
+                if est is not None:
+                    log["aux"].append(np.concatenate([[est[0]], est[1]]))
 
-            self._telemetry(time.monotonic(), state, out, action, cmd,
-                            extra=self._probe_msg(policy))
+            self._telemetry(time.monotonic(), state, action, cmd,
+                            extra=self._aux_msg(policy))
             elapsed = time.monotonic() - t0
             if elapsed > C.CONTROL_DT * (1.0 + C.LOOP_OVERRUN_LIMIT):
                 print(f"[WARN] 루프 지연 {elapsed * 1000:.1f} ms")
             self._sleep_rest(t0)
 
         if log is not None:
-            np.savez(self.args.log_npz, **{k: np.asarray(v) for k, v in log.items()})
+            np.savez(self.args.log_npz,
+                     **{k: np.asarray(v) for k, v in log.items() if v})
             print(f"[LOG] {len(log['t'])} steps -> {self.args.log_npz}")
 
     def dry_run(self, duration):
@@ -274,14 +261,14 @@ class Deployer:
                 break
             self.robot.send_poll()
             state = self.robot.read_state()
-            out = self._step_estimator(state, C.CONTROL_DT)
             now = time.monotonic()
             if now - self.last_print >= 1.0:
                 self.last_print = now
                 np.set_printoptions(precision=2, suppress=True)
                 print(f"q={state.q}")
-                print(f"  v_body={out['v_body']} rpy={state.rpy} "
-                      f"ff={state.foot_force}", flush=True)
+                print(f"  dq={state.dq}")
+                print(f"  rpy={state.rpy} ff={state.foot_force} "
+                      f"contact={self._contact_count(state)}", flush=True)
             self._sleep_rest(t0)
 
     def _sleep_rest(self, t0):
@@ -305,9 +292,10 @@ def main():
     ap.add_argument("--kd", type=float, default=C.KD)
     ap.add_argument("--power-protect", type=int,
                     default=C.POWER_PROTECT_LEVEL)
-    ap.add_argument("--lin-vel", choices=["cmd", "kf"], default="cmd",
-                    help="base_lin_vel 관측 소스. cmd(기본) = 속도 명령 proxy "
-                         "(모든 시뮬 검증과 동일), kf = 온보드 칼만 필터 추정")
+    ap.add_argument("--injured-leg", default=None,
+                    choices=C.LEG_NAMES,
+                    help="부목을 채운 다리. 관측의 peg_leg_one_hot 을 켜고 그 calf 의 "
+                         "action 을 마스킹합니다. 생략하면 정상(one_hot 전부 0).")
     ap.add_argument("--vx-floor", type=float, default=0.0,
                     help="전진 명령 램프의 하한. 학습 분포에 하한이 있는 모델용 "
                          "(phase3 student 는 0.3 권장)")
@@ -321,6 +309,8 @@ def main():
     ap.add_argument("--mock", action="store_true",
                     help="SDK 없이 mock 로봇으로 코드 경로 검증")
     args = ap.parse_args()
+    args.injured_leg = (C.LEG_NAMES.index(args.injured_leg)
+                        if args.injured_leg else None)
 
     if args.mock:
         from robot_io import MockGo1Interface
@@ -336,10 +326,9 @@ def main():
         from policy import Policy
         policy = Policy(args.policy)
 
-    dep = Deployer(robot, LinearKFStateEstimator(), args)
+    dep = Deployer(robot, args)
     _flush_stdin()
     try:
-        dep._estimator_warmup()
         if args.mode == "dry-run":
             dep.dry_run(args.duration)
             return

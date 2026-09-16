@@ -1,149 +1,164 @@
-# Go1 Real-World Policy Deployment Package
+# go1_real — Phase-3 student 실물 Unitree Go1 배포
 
-이 패키지는 Isaac Lab에서 학습된 Go1 Quadruped의 강화학습 정책(Policy)을 실제 Go1 로봇(ROS Melodic 환경)에서 원활하고 안전하게 실행하기 위해 작성되었습니다. 
-특히, 로봇의 특정 다리가 다치거나 의족 상태인 경우(Peg-Leg)에 적응하여 동작하는 복합 환경 보행 시나리오를 지원합니다.
+`go1_lod` (Isaac Lab 5.1 + RSL-RL)에서 학습한 Phase-3 student 정책을 실물 Go1에
+올리는 스택입니다. 부목(splint)을 채운 다리에 적응하는 antalgic 보행을 지원합니다.
 
----
+배포 경로는 **하나**입니다: `sdk_deploy/` 가 unitree_legged_sdk 에 직접 붙습니다
+(ROS 불필요). 예전 ROS 노드(`scripts/deploy_policy.py` + `launch/`)는 같은 일을
+두 번 하던 중복이라 제거했습니다.
 
-## 📂 폴더 및 파일 구조
-
-```text
-go1_real/
-├── model/
-│   ├── policy.pt        # 학습이 완료된 PyTorch JIT 모델 파일
-│   └── policy.onnx      # (선택사항) ONNX 모델 파일
-├── scripts/
-│   ├── deploy_policy.py # 실시간 ROS 제어 루프 파이썬 스크립트
-│   └── deploy.launch    # ROS 파라미터 및 노드 실행용 Launch 파일
-└── README.md            # 사용 가이드 및 필수 지침
+```
+scripts/
+  export_p3_student.py     체크포인트 -> 배포 번들 (torch 만 필요, Isaac Sim 불필요)
+  export_policy_numpy.py   구버전 ONNX -> NumPy 번들 (레거시 모델용)
+  sync_to_robot.sh         이 저장소를 온보드 NX 로 rsync
+sdk_deploy/
+  deploy.py                메인 루프 (dry-run / hang / stand / walk + 안전장치)
+  config.py                학습 설정에서 옮겨 적은 모든 상수
+  observation.py           49차원 관측 조립
+  policy.py                번들 로더 (.npz / .onnx / .pt) + 보조 헤드
+  robot_io.py              SDK 인터페이스 (Isaac <-> SDK 관절 순서 변환은 여기서만)
+  selftest.py              로봇 없이 도는 자가 검증
+  model/P3-final/exported/ 배포 번들
+sim_test/
+  sim_deploy_parity.py     실기 전 Isaac Sim 파리티 테스트
+  run_sim_test.sh          실행 래퍼
 ```
 
 ---
 
-## 🚀 사용 방법 (Deployment Workflow)
+## 관측 규격 (49차원)
 
-### 1. 환경 준비 및 설치
-Go1의 온보드 PC(또는 라즈베리 파이) 환경에서 다음 의존 패키지가 필요합니다:
-* **ROS Melodic**
-* `unitree_legged_msgs` (Unitree ROS SDK)
-* Python 3 & Numpy
-* **Inference Runtime:**
-  * ⚠️ **실측: Go1 온보드 NX(192.168.123.15)에는 PyTorch도 ONNX Runtime도 없고 인터넷도 없습니다**
-    (Python 3.6.9 / numpy 1.13.3). 하드웨어에서 실제로 도는 백엔드는 **순수 NumPy 번들
-    (`policy_numpy.npz`)** 하나뿐입니다. 추론 속도는 NX에서 3.4 ms/step (50Hz 예산 20ms의 17%).
-  * `deploy_policy.py`는 `.pt` / `.onnx` 로드 실패 시 같은 폴더의 `policy_numpy.npz`로 자동
-    폴백하므로, 로봇에서는 `.npz`를 직접 지정하는 것이 확실합니다.
-  * PyTorch / ONNX Runtime이 있는 개발 PC에서는 `.pt` / `.onnx`가 그대로 동작합니다.
+학습 측 기준은 `go1_lod` 의 `mdp/obs_normalizer.py` 이고, 내보낸
+`policy_io.json` 이 같은 레이아웃을 싣습니다. 셋이 어긋나면
+`reference_io.json` 자가검증이 모터를 건드리기 전에 걸립니다.
 
-### 2. 모델 이동
-학습 완료된 학생(Student) 정책의 내보내기(Export) 결과물을 `model` 폴더에 저장합니다.
-* `policy.pt` 또는 `policy.onnx` (경로: `/home/shw/go1_real/model/`)
+| 구간 | 항목 | 실기 소스 |
+|---|---|---|
+| `[0:3]` | `base_ang_vel` | IMU 자이로 |
+| `[3:6]` | `projected_gravity` | IMU 쿼터니언 → `R^T [0,0,-1]` |
+| `[6:9]` | `velocity_commands` | `(vx, vy, wz)` |
+| `[9:21]` | `joint_pos_rel` | `q - default` |
+| `[21:33]` | `joint_vel_rel` | `dq` |
+| `[33:45]` | `last_actions` | 직전 정책 출력 (raw) |
+| `[45:49]` | `peg_leg_one_hot` | 부상 다리 `[FL, FR, RL, RR]`, 정상 = 전부 0 |
 
-### 3. 실행 방법 (ROS Launch)
-실행 스크립트는 Unitree ROS가 가동 중인 환경(기본 low-level SDK 구동) 위에서 동작해야 합니다.
+주의할 점 세 가지:
 
-**A. 기본 정상(Healthy) 보행 테스트:**
+* **`base_lin_vel` 이 없습니다.** 실기 Go1 는 몸통 선속도를 측정할 수 없어 학습
+  env 가 policy 그룹에서 빼고 teacher 전용으로 옮겼습니다. 예전에 쓰던 칼만 필터
+  상태추정기는 그래서 제거했습니다. 추정치가 필요하면 정책의 `vel_head` 출력을
+  쓰세요 (`policy.estimate()`).
+* **부상 다리를 정책이 봅니다.** `peg_leg_one_hot` 이 policy 그룹에 있으므로 이
+  student 는 proprioception 전용이 아닙니다. 배포할 때 `--injured-leg` 로
+  물리적으로 부목을 채운 다리와 반드시 일치시켜야 합니다.
+* **관측 스케일이 정책 안에 있습니다.** 학습의 `train.normalize` (joint_vel × 0.23)
+  는 `.pt`/`.onnx` 는 그래프에, `.npz` 는 `lstm_weight_ih` 에 접혀 들어갑니다.
+  배포 코드는 **raw 관측**을 그대로 먹입니다.
+
+정책 구조는 `LSTM(hidden 256, 1층) → MLP [512, 256, 128] elu`. hidden state 가
+제어 스텝 간에 이어지고, 기립 완료 후 정책 인계 시점에 0으로 리셋됩니다.
+출력은 raw action 입니다 (`mse_norm` 은 학습 loss 스케일일 뿐 역정규화 불필요).
+
+---
+
+## 1. 내보내기 (개발 PC)
+
 ```bash
-rosrun go1_real deploy_policy.py _model_path:=/home/shw/go1_real/model/policy.pt
+/home/shw/miniconda3/envs/isaac/bin/python scripts/export_p3_student.py \
+    --checkpoint sdk_deploy/model/P3-final/model_3999.pt
 ```
 
-**B. 특정 다리가 다친(Peg-Leg) 시나리오 테스트 (예: 우측 전방 FR 다리):**
+체크포인트 state_dict 에서 student 추론 경로를 직접 재조립하므로 **torch 만**
+있으면 됩니다 — Isaac Sim / Isaac Lab / GPU 모두 불필요합니다. 세 백엔드가
+torch 레퍼런스와 1e-5 안에서 일치하지 않으면 내보내기를 거부합니다.
+
+산출물 (`sdk_deploy/model/P3-final/exported/`):
+
+| 파일 | 용도 |
+|---|---|
+| `policy_numpy.npz` | **온보드 NX 에서 실제로 도는 것** (torch/onnxruntime 없음) |
+| `policy.onnx`, `policy.pt` | 개발 PC 검증용 |
+| `aux_heads.npz` | `vel_head`(몸통 선속도) / `splint_head`(부목 길이) |
+| `policy_io.json` | 관측 레이아웃 + 번들 메타데이터 |
+| `reference_io.json` | hidden=0 에서 시작하는 20스텝 레퍼런스 (자가검증 기준) |
+
+## 2. 검증 (로봇 없이)
+
 ```bash
-rosrun go1_real deploy_policy.py _injured_leg_idx:=1 _model_path:=/home/shw/go1_real/model/policy.pt
+cd sdk_deploy
+python3 selftest.py --policy model/P3-final/exported/policy_numpy.npz
 ```
-*(인덱스 정보: 0=FL, 1=FR, 2=RL, 3=RR)*
 
-**C. Phase-3 Student 정책 (antalgic / fault_tolerant / symmetry):**
+관절 순서 왕복, 49차원 관측 배치, one-hot 인코딩, 명령 클립, mock 로봇 기립+정책
+루프(정상/부목 양쪽), 번들 레퍼런스 자가검증을 확인합니다.
+
+## 3. 검증 (Isaac Sim 파리티)
+
 ```bash
-# 기립만 (정책 OFF)
-roslaunch go1_real deploy_student.launch paradigm:=antalgic
-
-# 정책 활성화
-roslaunch go1_real deploy_student.launch paradigm:=antalgic enable_policy:=true
+sim_test/run_sim_test.sh                    # 정상 조건
+PEG_LEG=rl sim_test/run_sim_test.sh         # RL 다리 부상 조건
 ```
-**`deploy.launch`가 아니라 `deploy_student.launch`를 쓰세요.** `deploy.launch`는 Kp=30/Kd=1.5와
-`action_scale_multiplier=0.2`를 강제하는데, 둘 다 student에 맞지 않습니다 (아래 실측 참조).
 
-### 모델 → NumPy 번들 변환 (개발 PC에서)
-로봇에 ONNX Runtime이 없으므로 개발 PC에서 변환 후 전송합니다 (`pip install onnx` 필요):
+시뮬이 있어야만 볼 수 있는 세 가지를 확인합니다: 관절 순서 감사, 관측 조립
+충실도(env 관측 vs 배포 경로 재조립), 폐루프 거동. 내보내기 충실도는 이미
+`reference_io.json` 이 시뮬 없이 확인합니다.
+
+## 4. 실기
+
 ```bash
-python3 scripts/export_policy_numpy.py antalgic/exported/policy.onnx \
-    --env-yaml antalgic/params_student/env.yaml
 ./scripts/sync_to_robot.sh --go
+# NX 에서:
+cd ~/go1_ws/src/go1_real/sdk_deploy
+python3 deploy.py --mode dry-run                      # 손으로 움직여 부호/순서 확인
+python3 deploy.py --mode stand                        # 기립만
+python3 deploy.py --mode hang  --policy model/P3-final/exported/policy_numpy.npz
+python3 deploy.py --mode walk  --policy model/P3-final/exported/policy_numpy.npz --vx 0.4
 ```
-이 변환기는 ONNX 게이트 순서(`iofc`)를 레포 규약인 PyTorch 순서(`ifgo`)로 재정렬하며,
-커밋된 번들을 비트 단위로 재현하는 것을 확인했습니다.
 
-### 진단 도구
+**반드시 이 순서로** 진행하세요. `hang` 은 로봇을 매단 상태에서 정책을 돌려
+발산 없이 트로트 비슷하게 움직이는지 보는 단계입니다.
+
+부목을 채운 경우:
+
 ```bash
-rosrun go1_real check_stand.py       # 기립 품질: 목표 대비 오차, tauEst/Kp, 수평도
-rosrun go1_real check_gait.py 5      # 보행 여부: 다리별 진폭, 몇 개 다리가 움직이는지
+python3 deploy.py --mode walk --policy .../policy_numpy.npz --vx 0.4 --injured-leg FR
 ```
 
----
-
-## 🛡️ 안전 사양 (Safety Features)
-
-실제 로봇 하드웨어를 보호하기 위해 스크립트 내에 다음과 같은 강력한 안전 로직이 탑재되어 있습니다.
-
-1. **부드러운 기립(Safe Stand Up Phase):**
-   * 노드가 시작되면 즉시 격렬하게 정책이 반응하지 않고, 로봇의 **현재 관절 각도**에서부터 **기본 설계 서 있는 각도**까지 **4초 동안 서서히 선형 보간(Interpolation)**하여 일어섭니다.
-   * 서는 과정에서 관절 게인($K_p$)을 부드럽게 램프업(Ramp-up)하여 스냅 현상을 방지합니다.
-
-2. **기울임 자동 감지 셧다운(Orientation Safety Stop):**
-   * 실행 도중 로봇이 뒤집히거나 한쪽으로 심하게 기울어지는 경우(약 60도 이상), 내부 중력 벡터 방향 변화를 즉각 감지하여 **모든 제어 명령을 차단**합니다.
-   * 차단 즉시 모든 관절 강성을 0으로 하고 중간 수준의 감쇠력만 유지하는 **안전 댐핑(Dampening Mode)**으로 전환되어 로봇이 스스로 사뿐히 주저앉으며 모터 과부하를 방지합니다.
-
-3. **관측 차원 검증(Observation Dim Guard):**
-   * 기립을 시작하기 **전에** 조립된 관측 차원이 로드된 가중치가 기대하는 차원과 일치하는지
-     확인하고, 불일치하면 모터를 건드리지 않고 즉시 중단합니다.
-   * `policy_metadata.json`이 있으면 레퍼런스 행동값과 대조하는 자체 테스트도 수행합니다
-     (recurrent 정책은 hidden state를 0으로 리셋한 상태에서 비교).
-
-4. **관절 가동 범위 제한(Joint Limits Clipping):**
-   * 정책에서 출력되는 임의의 폭주 행동을 방지하기 위해, 실제 Unitree Go1 하드웨어 가동 범위를 기반으로 계산된 Soft Joint Range 밖으로 벗어나는 명령을 사전 차단(Clamp)합니다.
+`--injured-leg` 는 (1) 관측의 `peg_leg_one_hot` 을 켜고, (2) 학습과 동일하게 그
+calf 의 action 을 0 으로 마스킹한 뒤 부목 고정각(-2.55 rad)으로 유지합니다.
 
 ---
 
-## ⚙️ 기술 사양 정보
+## 안전 사양
 
-### 🔄 관절 순서(Remapping) 및 중력 투영
-* **순서 변환:** Unitree 하드웨어 모터 배치(`FR, FL, RR, RL`)와 Isaac Lab 시뮬레이터 내 배치(`FL, FR, RL, RR`) 차이를 코드 내부에서 실시간으로 자동 정합시켜 변환합니다.
-* **중력 투영:** 내부 IMU 쿼터니언을 기저 프레임으로 변환하여 계산한 정밀 물리 수식 기반의 Projected Gravity 계산식(Numpy 최적화)을 사용합니다.
+1. **관측 차원 / 레퍼런스 검증** — 기립을 시작하기 **전에** 번들 입력 차원이
+   `config.OBS_DIM` 과 맞는지, `reference_io.json` 의 행동값과 1e-3 안에서
+   일치하는지 확인하고, 아니면 모터를 건드리지 않고 즉시 중단합니다.
+2. **부드러운 기립** — 현재 관절각에서 기본 자세까지 `--stand-time` 동안 선형
+   보간하며 게인을 램프업합니다.
+3. **기울임 자동 셧다운** — roll/pitch 가 0.7 rad 를 넘으면 모든 제어를 끊고
+   Kp=0 / Kd 만 남기는 damping 으로 전환합니다.
+4. **관절 가동범위 클램프** — Go1 URDF 한계에 soft factor 0.9 를 적용해 목표각을
+   사전 차단합니다.
+5. **명령 클립** — 학습 분포 밖 속도 명령을 잘라냅니다.
+6. **정상 종료 시 lie_down** — damping 직행은 Kp=0 이라 뚝 떨어지므로, 엎드림
+   자세로 천천히 보간한 뒤 damping 합니다.
 
-### 📐 고정 파라미터 (Config Match)
-* **루프 동작 주기:** `50Hz` (0.02초 dt)
-* **행동 스케일(Action Scale):** `0.25`
-* **제어 게인:**
-  * Phase-1 healthy: $K_p = 25.0$, $K_d = 0.5$ — 학습이 ActuatorNetMLP(`stiffness: null`) 기반이라
-    정확한 PD 등가값이 없는 관례값입니다.
-  * Phase-3 student: $K_p = 20.0$, $K_d = 0.5$ — 학습에 쓰인 `DCMotor`의 실제 게인입니다.
-    번들에 게인이 없으므로 `deploy_student.launch`에서 지정합니다.
-* **기립 게인 (실측 근거):** `stand_up()`은 적분항도 중력 보상도 없는 순수 P 제어라 정상상태
-  오차가 정확히 `필요토크 / Kp`입니다. NX 실측:
+## 기술 사양
 
-  | stand_up_Kp | 최대 관절 오차 | 결과 |
-  |---|---|---|
-  | 20 (학습 게인) | 0.66 rad | 뒷무릎이 바닥에 닿아 **기립 실패** |
-  | 60 | 0.13 rad | 수평 기립 (`projected_gravity_z = -0.999`) |
+* **제어 주기** 50 Hz (`sim.dt 0.005 × decimation 4`)
+* **action scale** 0.25, `target_q = default_q + 0.25 × action`
+* **게인** 정책 Kp=20 / Kd=0.5 (학습에 쓰인 `DCMotor` 실제 값)
+* **기립 게인** Kp=60 / Kd=1 → 정책 인계 후 3초에 걸쳐 20/0.5 로 블렌딩
 
-  기립 후 `policy_ramp_time` 동안 Kp를 60 → 20으로 블렌딩하며, 램프가 끝난 시점에 Kp=20에서
-  `projected_gravity_z = -1.000`으로 정책이 스스로 몸을 지탱합니다. 붕괴 자세에서는 뒷무릎
-  필요 토크가 12.9 Nm이지만 기립 후에는 5.1 Nm로 떨어져서, 같은 Kp로도 버틸 수 있게 됩니다.
-* **행동 권한 (실측 근거):** 보행은 오픈루프 시계가 아니라 **폐루프 리미트 사이클**입니다.
-  `action_scale_multiplier=0.2`에서는 NX 실측 **0/4 다리, 12관절 전부 0.003 rad 미만**으로
-  고정점에 갇혀 어떤 `cmd_vel`에도 보행이 발화하지 않았습니다. 기본값은 1.0(학습 그대로)이며,
-  안전은 `policy_ramp_time`의 0 → 1 램프가 담당합니다.
-* **입력 차원:** Phase-1 Healthy 51차원 / Phase-3 Student 48차원 (아래 48차원은 공통)
-  * 기본 상태 48차원: base_lin_vel(3) + base_ang_vel(3) + projected_gravity(3) + velocity_commands(3) + joint_pos_rel(12) + joint_vel(12) + last_action(12)
-  * Peg-Leg Privileged 3차원: `peg_leg_index, peg_leg_splint_length, peg_leg_foot_friction` → Healthy 기본값 `[0, 0, 1]` 고정
-    (**Phase-1 전용.** Student는 proprioception 전용이라 48차원에서 끝납니다)
-  * ⚠️ 지형 스캔(height_scan)은 이 export에 포함되지 않습니다. 모델 옆 `deployment_config.json`이 실제 입력 레이아웃의 기준입니다.
-* **정책 구조:**
-  * Phase-1 healthy: Feed-forward ActorCritic MLP (hidden `[512, 256, 128]`, `elu`)
-  * Phase-3 student: **LSTM(hidden 256, 1층) → MLP `[512, 256, 128]` `elu`**. hidden state가 제어
-    스텝 간에 이어지고, 기립 완료 후 정책 인계 시점에 0으로 리셋됩니다. NumPy 백엔드의 LSTM은
-    PyTorch 게이트 순서(`ifgo`)를 따르며, 세 student 모두 NX 실기에서 `policy_metadata.json`의
-    레퍼런스 행동값과 1e-6 이내로 일치함을 확인했습니다.
-* **base_lin_vel 주의:** 실제 Go1는 몸체 선속도를 직접 측정할 수 없어 0으로 입력합니다 (sim-to-real 근사).
-* **Healthy 전용:** 이 정책은 정상 보행만 학습되어 다친 다리에 맞춰 보행을 적응시키지 않습니다. `injured_leg_idx`를 지정하면 해당 종아리 모터만 물리적으로 풀어(스플린트 고정용) 줄 뿐이며, 실제 부상 적응은 Phase-2/Student 정책이 필요합니다.
+  기립 게인이 높은 이유 (NX 실측): `stand_up()` 은 적분항도 중력 보상도 없는 순수
+  P 제어라 정상상태 오차가 정확히 `필요토크 / Kp` 입니다. Kp=20 이면 뒷무릎 오차
+  0.66 rad 로 바닥에 닿아 기립에 실패하고, Kp=60 이면 0.13 rad 로 수평 기립합니다.
+  붕괴 자세의 뒷무릎 필요 토크는 12.9 Nm 지만 기립 후에는 5.1 Nm 로 떨어져서,
+  같은 Kp=20 으로도 버틸 수 있게 됩니다.
+* **관절 순서** Unitree SDK 는 다리별 `FR, FL, RR, RL`, Isaac Lab 은 타입별
+  `[hips][thighs][calves]`. 변환은 `robot_io.py` 안에서만 일어납니다.
+* **온보드 NX 제약** Python 3.6.9 / numpy 1.13.3, torch 도 onnxruntime 도 없고
+  인터넷도 없습니다. 하드웨어에서 도는 백엔드는 순수 NumPy 번들(`.npz`) 하나뿐이고,
+  추론은 3.4 ms/step (50 Hz 예산 20 ms 의 17%) 입니다.
