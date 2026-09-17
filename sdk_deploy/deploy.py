@@ -99,14 +99,14 @@ class Deployer:
         """평활된 부목 길이 / 몸통 선속도 추정.
 
         인계 직후에는 LSTM 이 아직 이력을 쌓는 중이라 추정이 출렁입니다 (구 모델
-        실측: 인계 구간에 가짜 부상 스파이크 후 소멸). 게인 블렌딩 + 1초가 지날
-        때까지는 값에 (수렴 중) 을 붙입니다.
+        실측: 인계 구간에 가짜 부상 스파이크 후 소멸). 정책 시작 후 1초까지는
+        값에 (수렴 중) 을 붙입니다.
         """
         if self._aux_ema is None:
             return None
         L, v = self._aux_ema[0], self._aux_ema[1:]
         msg = "L_hat=%.3f m  v_hat=(%+.2f,%+.2f,%+.2f)" % (L, v[0], v[1], v[2])
-        if elapsed < self.args.gain_blend + 1.0:
+        if elapsed < 1.0:
             msg += "  (수렴 중)"
         return msg
 
@@ -208,6 +208,35 @@ class Deployer:
             self._telemetry(time.monotonic(), state)
             self._sleep_rest(t0)
 
+    def blend_gains(self, duration):
+        """정책 인계 전에 기본 자세를 홀드한 채 게인을 STAND_KP/KD -> KP/KD 로 내립니다.
+
+        정책은 학습 내내 Kp 20 에서만 돌았습니다. 인계 순간의 "발작"은 보통 크기의
+        보행 행동이 기립 강성(Kp 60)에서 실행돼 생기는 것이라(실측), 블렌딩을 정책
+        실행 중이 아니라 그 전에 끝내서 정책이 첫 스텝부터 학습 조건(Kp 20, 기본
+        자세, hidden 0, 100% 권한)에서 시작하게 합니다. 정책이 돌지 않는 구간이라
+        LSTM 이 "명령해도 안 움직이는" 이력을 쌓을 일도 없습니다.
+        기립 후 기본 자세는 Kp 20 으로도 버팁니다 (README 기술 사양 참고).
+        """
+        n = int(duration / C.CONTROL_DT)
+        if n <= 0:
+            return
+        print("[HOLD] 게인 블렌딩 Kp %.0f/Kd %.1f -> %.0f/%.1f (%.1f s)" % (
+            self.args.stand_kp, self.args.stand_kd, self.args.kp, self.args.kd, duration))
+        for k in range(n):
+            t0 = time.monotonic()
+            if _stdin_pressed():
+                raise KeyboardInterrupt
+            state = self.robot.read_state()
+            if not self._tilt_ok(state):
+                raise RuntimeError("tilt guard during gain blend")
+            b = _smoothstep((k + 1) / n)
+            kp = self.args.stand_kp + (self.args.kp - self.args.stand_kp) * b
+            kd = self.args.stand_kd + (self.args.kd - self.args.stand_kd) * b
+            self.robot.send_positions(C.DEFAULT_JOINT_POS, kp, kd)
+            self._telemetry(time.monotonic(), state)
+            self._sleep_rest(t0)
+
     def lie_down(self, duration=C.LIE_DOWN_TIME):
         """정상 종료용: 현재 자세 → 엎드림 자세로 천천히 보간 후 damping.
         """
@@ -225,7 +254,8 @@ class Deployer:
             self._sleep_rest(t0)
 
     def run_policy(self, policy, cmd_target, duration, cmd_ramp=2.0):
-        print(f"[POLICY] 시작 cmd={cmd_target} (Enter = 정지)")
+        print(f"[POLICY] 시작 cmd={cmd_target} Kp={self.args.kp:.0f}/Kd={self.args.kd:.1f} "
+              "(Enter = 정지)")
         # recurrent(LSTM) 정책은 학습에서 에피소드가 hidden=0 으로 시작하므로,
         # 정책 인계 시점에 상태를 리셋합니다 (feed-forward / selftest 람다는 no-op).
         if hasattr(policy, "reset"):
@@ -258,10 +288,9 @@ class Deployer:
                 q_des, action = self._apply_splint(q_des, action)
                 last_action = action
                 est = policy.estimate() if hasattr(policy, "estimate") else None
-                blend = _smoothstep(k * C.CONTROL_DT / self.args.gain_blend)
-                kp_now = self.args.stand_kp + (self.args.kp - self.args.stand_kp) * blend
-                kd_now = self.args.stand_kd + (self.args.kd - self.args.stand_kd) * blend
-                self.robot.send_positions(q_des, kp_now, kd_now)
+                # 게인은 blend_gains() 가 인계 전에 이미 KP/KD 로 내려놓았습니다 —
+                # 정책 행동이 기립 강성에서 실행되는 순간은 없습니다.
+                self.robot.send_positions(q_des, self.args.kp, self.args.kd)
 
                 if log is not None:
                     log["t"].append(t0)
@@ -343,8 +372,8 @@ def main():
                     help="전진 명령 램프의 하한. 학습 분포에 하한이 있는 모델용 "
                          "(phase3 student 는 0.3 권장)")
     ap.add_argument("--gain-blend", type=float, default=C.GAIN_BLEND_TIME,
-                    help="인계 시 STAND_KP->KP 블렌딩 시간(s). 인계 충격은 정책 행동이 "
-                         "기립 강성(Kp60)에서 실행돼서 생기므로 짧게 둡니다 (실측 1.0)")
+                    help="정책 인계 *전* 기본 자세 홀드 중 STAND_KP->KP 블렌딩 시간(s). "
+                         "정책은 첫 스텝부터 학습 게인(Kp20)에서 돕니다. 0=즉시 전환")
     ap.add_argument("--stand-kp", type=float, default=C.STAND_KP,
                     help="기립/유지 게인. 60=수평 기립(실측), 30=부드럽지만 뒷다리 처짐")
     ap.add_argument("--stand-kd", type=float, default=C.STAND_KD)
@@ -384,9 +413,11 @@ def main():
         if args.mode == "stand":
             dep.hold_default(args.duration)
         elif args.mode == "hang":
+            dep.blend_gains(args.gain_blend)
             dep.run_policy(policy, np.zeros(3), args.duration)
         elif args.mode == "walk":
             cmd = clip_command(args.vx, args.vy, args.wz)
+            dep.blend_gains(args.gain_blend)
             dep.run_policy(policy, cmd, args.duration)
         # 정상 종료(시간 만료 / 정책 중 Enter)
         # 예외 경로(기울임 가드, Ctrl-C)는 아래 finally 의 즉시 damping 

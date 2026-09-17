@@ -95,7 +95,14 @@ def _mock_loop(injured_leg=None):
 
     dep.state_warmup(seconds=0.1)
     dep.stand_up(duration=0.2)
+    dep.blend_gains(0.2)
+    # 블렌딩 끝: 마지막 명령은 정확히 학습 게인
+    assert robot.sent[-1][1] == C.KP and robot.sent[-1][2] == C.KD, robot.sent[-1][1:]
+    n_before = len(robot.sent)
     dep.run_policy(_ZeroPolicy(), np.zeros(3), duration=0.5)
+    # 정책 구간은 첫 스텝부터 끝까지 KP/KD — 기립 강성에서 실행되는 행동이 없어야 함
+    for _, kp, kd in robot.sent[n_before:]:
+        assert kp == C.KP and kd == C.KD, (kp, kd)
 
     assert len(robot.sent) > 20
     lo, hi = C.SOFT_JOINT_LIMITS[:, 0], C.SOFT_JOINT_LIMITS[:, 1]
@@ -108,7 +115,8 @@ def test_mock_deploy_loop():
     robot = _mock_loop()
     # zero action -> 기본 자세
     assert np.allclose(robot.sent[-1][0], C.DEFAULT_JOINT_POS, atol=1e-6)
-    print(f"ok: mock deploy loop, {len(robot.sent)} commands sent")
+    print(f"ok: mock deploy loop, {len(robot.sent)} commands sent, "
+          f"policy ran at Kp {C.KP:.0f} from step 1")
 
 
 def test_mock_deploy_loop_injured():
