@@ -105,7 +105,12 @@ class Deployer:
         if self._aux_ema is None:
             return None
         L, v = self._aux_ema[0], self._aux_ema[1:]
-        msg = "L_hat=%.3f m  v_hat=(%+.2f,%+.2f,%+.2f)" % (L, v[0], v[1], v[2])
+        msg = "v_hat=(%+.2f,%+.2f,%+.2f) m/s" % (v[0], v[1], v[2])
+        if self.injured_leg is not None:
+            # splint_head 는 부목 길이 0.3~0.4 m 라벨로만 학습됐습니다 (config.json
+            # mse_norm.splint_mean 0.35 / std 0.029). 정상 로봇에서는 그 평균(0.35)
+            # 근처를 그냥 출력하므로 의미가 없어 부목 모드에서만 표시합니다.
+            msg = "L_hat=%.3f m  " % L + msg
         if elapsed < 1.0:
             msg += "  (수렴 중)"
         return msg
