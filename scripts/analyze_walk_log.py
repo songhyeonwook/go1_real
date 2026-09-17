@@ -64,6 +64,13 @@ def main_static(d):
         for j, name in enumerate(("hip", "thigh", "calf")):
             v = e[:, 4 * j:4 * j + 4].mean(0)
             print("  %-5s %s   L-R 앞 %+.3f 뒤 %+.3f" % (name, np.round(v, 3).tolist(), v[0] - v[1], v[2] - v[3]))
+        if "kp" in d.files and d["kp"].max() > 0:
+            m = d["kp"] == d["kp"].max()    # 블렌딩 구간 제외, 홀드 게인만
+            tau = d["kp"][m, None] * e[m] - d["kd"][m, None] * dq[m]
+            print("== 정지 유지 토크 추정 Kp*e - Kd*dq @ Kp %.0f (FL FR RL RR, Nm) ==" % d["kp"].max())
+            for j, name in enumerate(("hip", "thigh", "calf")):
+                print("  %-5s %s" % (name, np.round(tau[:, 4 * j:4 * j + 4].mean(0), 2).tolist()))
+            print("  같은 자세를 다른 Kp 로 유지한 로그와 비교: 토크가 같으면 이상적 PD, 다르면 마찰/데드밴드")
     print("== 관절각 q 평균 (FL FR RL RR) ==")
     for j, name in enumerate(("hip", "thigh", "calf")):
         print("  %-5s %s" % (name, np.round(q[:, 4 * j:4 * j + 4].mean(0), 3).tolist()))

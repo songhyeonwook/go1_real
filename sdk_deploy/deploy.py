@@ -83,7 +83,7 @@ class Deployer:
         self._static_log = None
         if getattr(args, "log_npz", None):
             self._static_log = {k: [] for k in
-                                ("t", "q", "dq", "q_des", "ff", "quat", "gyro")}
+                                ("t", "q", "dq", "q_des", "ff", "quat", "gyro", "kp", "kd")}
         if self.injured_leg is not None:
             print("[INJURY] %s 다리 부목 모드 — one_hot=%s, calf action 마스킹, "
                   "고정각 %.2f rad" % (C.LEG_NAMES[self.injured_leg],
@@ -122,11 +122,13 @@ class Deployer:
 
     # ---- 공통 루프 유틸 --------------------------------------------------
 
-    def _static_log_step(self, t0, state, q_des):
+    def _static_log_step(self, t0, state, q_des, kp=0.0, kd=0.0):
         if self._static_log is None:
             return
         L = self._static_log
         L["t"].append(t0)
+        L["kp"].append(float(kp))
+        L["kd"].append(float(kd))
         L["q"].append(state.q.copy())
         L["dq"].append(state.dq.copy())
         L["q_des"].append(np.asarray(q_des, dtype=np.float64).copy())
@@ -235,7 +237,8 @@ class Deployer:
             self.robot.send_positions(
                 C.DEFAULT_JOINT_POS, self.args.stand_kp, self.args.stand_kd
             )
-            self._static_log_step(t0, state, C.DEFAULT_JOINT_POS)
+            self._static_log_step(t0, state, C.DEFAULT_JOINT_POS,
+                                  self.args.stand_kp, self.args.stand_kd)
             self._telemetry(time.monotonic(), state)
             self._sleep_rest(t0)
 
@@ -265,7 +268,7 @@ class Deployer:
             kp = self.args.stand_kp + (self.args.kp - self.args.stand_kp) * b
             kd = self.args.stand_kd + (self.args.kd - self.args.stand_kd) * b
             self.robot.send_positions(C.DEFAULT_JOINT_POS, kp, kd)
-            self._static_log_step(t0, state, C.DEFAULT_JOINT_POS)
+            self._static_log_step(t0, state, C.DEFAULT_JOINT_POS, kp, kd)
             self._telemetry(time.monotonic(), state)
             self._sleep_rest(t0)
 
