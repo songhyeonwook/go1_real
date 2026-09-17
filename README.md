@@ -106,23 +106,103 @@ PEG_LEG=rl sim_test/run_sim_test.sh         # RL 다리 부상 조건
 
 ## 4. 실기
 
+### 4.1 네트워크 / 접속
+
+Go1 내부망은 `192.168.123.0/24` 입니다. 개발 PC 의 유선 IP 를 `192.168.123.99` 로
+고정한 뒤 접속합니다.
+
+| 장비 | 주소 | 용도 |
+|---|---|---|
+| 개발 PC | `192.168.123.99` | 내보내기 / rsync |
+| Raspberry Pi | `pi@192.168.123.161` | 상위 제어 보드 (배포에는 사용 안 함) |
+| NX | `unitree@192.168.123.15` | **배포 실행 대상** |
+
 ```bash
-./scripts/sync_to_robot.sh --go
-# NX 에서:
-cd ~/go1_ws/src/go1_real/sdk_deploy
-python3 deploy.py --mode dry-run                      # 손으로 움직여 부호/순서 확인
-python3 deploy.py --mode stand                        # 기립만
-python3 deploy.py --mode hang  --policy model/P3-final/exported/policy_numpy.npz
-python3 deploy.py --mode walk  --policy model/P3-final/exported/policy_numpy.npz --vx 0.4
+ssh pi@192.168.123.161        # Raspberry Pi
+ssh unitree@192.168.123.15    # NX (여기서 deploy.py 실행)
 ```
 
-**반드시 이 순서로** 진행하세요. `hang` 은 로봇을 매단 상태에서 정책을 돌려
-발산 없이 트로트 비슷하게 움직이는지 보는 단계입니다.
+`scripts/sync_to_robot.sh` 는 기본으로 NX(`unitree@192.168.123.15`) 로 보냅니다.
+
+### 4.2 NX 사전 준비
+
+```bash
+./scripts/sync_to_robot.sh --go            # 개발 PC 에서
+
+ssh unitree@192.168.123.15                 # 이후는 NX 에서
+cd ~/go1_ws/src/go1_real/sdk_deploy
+```
+
+ROS 는 필요 없습니다 (`deploy.py` 는 unitree_legged_sdk UDP 에 직접 붙습니다).
+`roscore` 나 `source /opt/ros/...` 없이 실행합니다.
+
+**리모컨으로 하위제어(low-level) 모드 진입** — 이걸 하지 않으면 상위 보행
+컨트롤러가 관절을 잡고 있어 `deploy.py` 의 관절 명령이 무시됩니다.
+
+1. **L2+A** — 앉기 (서 있으면 두 번)
+2. **L2+B** — damping, 완전히 바닥에 엎드림
+3. **L1+L2+START** — 하위제어 모드 진입. 관절 힘이 빠져 손으로 자유롭게
+   움직여지면 들어간 것입니다.
+4. 로봇을 매단 뒤 4.3 의 dry-run 부터 시작합니다.
+
+하위 모드에서는 리모컨으로 상위 모드로 돌아갈 수 없습니다 — 복귀하려면 로봇을
+재부팅합니다.
+
+* `roslaunch unitree_legged_real real.launch ctrl_level:=lowlevel` 은 **실행하지 않습니다.**
+  `deploy.py` 가 unitree_legged_sdk 에 직접 붙기 때문에, lowlevel 노드가 같이 돌면
+  모터 명령이 충돌합니다.
+
+### 4.3 실행 순서
+
+**반드시 이 순서로** 진행합니다. 각 단계가 통과해야 다음으로 넘어갑니다.
+
+| 단계 | 로봇 상태 | 명령 | 확인할 것 |
+|---|---|---|---|
+| (1) dry-run | 매단 채 | `python3 deploy.py --mode dry-run` | 다리를 손으로 움직여 센서 부호 / 관절 순서 |
+| (2) stand | 매단 채 | `python3 deploy.py --mode stand --duration 10` | 기립 자세 추종, 정책 미실행, 발 contact 가 0 |
+| (3) hang | 매단 채 | `python3 deploy.py --mode hang --policy model/P3-final/exported/policy_numpy.npz` | 명령 0 으로 정책 실행, 발산 없이 트로트 비슷한 다리 움직임 |
+| (4) walk | 지면 | `python3 deploy.py --mode walk --policy model/P3-final/exported/policy_numpy.npz --vx 0.3 --duration 10` | 제자리(명령 0 램프) → 짧은 전진 |
+
+```bash
+# (1) 로봇 매단 채 센서 방향/순서 검증
+python3 deploy.py --mode dry-run
+
+# (2) 매단 채 기립 자세 추종 (정책 미실행) — contact 이 0 인지 확인
+python3 deploy.py --mode stand --duration 10
+
+# (3) 매단 채 정책 실행 (명령 0) — 발산 없이 안정적인 다리 움직임 확인
+python3 deploy.py --mode hang --policy model/P3-final/exported/policy_numpy.npz --duration 10
+
+# (4) 지면에서 제자리 (명령 0 램프만) → 짧은 전진
+python3 deploy.py --mode walk --policy model/P3-final/exported/policy_numpy.npz \
+    --vx 0.3 --duration 10
+```
+
+속도는 0.3 으로 시작해 안정되면 0.4 까지 올립니다 (아래 실기 기록 참고).
+
+### 4.4 시간 옵션 — `--duration` 은 무엇을 재나
+
+stand / hang / walk 는 전부 같은 타임라인으로 돕니다:
+
+```
+상태 워밍업 1 s → 기립 --stand-time (기본 5 s) → 유지 1 s → [모드 본체 --duration] → lie_down 2.5 s → damping
+```
+
+| 옵션 | 기본 | 의미 |
+|---|---|---|
+| `--duration` | **20 s** | 모드 본체의 길이. dry-run = 관측 출력, stand = 기립 유지, hang/walk = 정책 실행. **모든 모드에 적용되며 생략하면 20 초** 돕니다. 처음 시도는 10 으로 짧게. |
+| `--stand-time` | 5 s | 엎드린 자세 → 기본 자세 보간 시간. `--duration` 과 별개. |
+| Enter | — | 어느 단계에서든 즉시 종료. 기립/유지/정책 중이면 damping, 정책이 정상 종료되면 lie_down 후 damping. |
+
+즉 `--mode stand --duration 10` 은 "기립 5 초 + 유지 1 초 + **10 초 더 유지** + 주저앉기 2.5 초"
+이고, `--mode walk --vx 0.3 --duration 10` 은 "기립 후 **10 초 동안 정책 실행**" 입니다.
+hang/walk 에서 `--duration` 을 빼면 20 초 동안 정책이 돕니다.
 
 부목을 채운 경우:
 
 ```bash
-python3 deploy.py --mode walk --policy .../policy_numpy.npz --vx 0.4 --injured-leg FR
+python3 deploy.py --mode walk --policy model/P3-final/exported/policy_numpy.npz \
+    --vx 0.4 --injured-leg FR
 ```
 
 `--injured-leg` 는 (1) 관측의 `peg_leg_one_hot` 을 켜고, (2) 학습과 동일하게 그
@@ -135,14 +215,19 @@ calf 의 action 을 0 으로 마스킹한 뒤 부목 고정각(-2.55 rad)으로 
 1. **관측 차원 / 레퍼런스 검증** — 기립을 시작하기 **전에** 번들 입력 차원이
    `config.OBS_DIM` 과 맞는지, `reference_io.json` 의 행동값과 1e-3 안에서
    일치하는지 확인하고, 아니면 모터를 건드리지 않고 즉시 중단합니다.
-2. **부드러운 기립** — 현재 관절각에서 기본 자세까지 `--stand-time` 동안 선형
+2. **상태 워밍업 후 기립** — Go1 MCU 는 패킷을 보낸 클라이언트에게만 low-level
+   상태를 회신하므로, 기립 전 1 초간 zero-torque 패킷으로 관절각을 받아 둡니다.
+   그래도 관절각이 전부 0 이면 (하위제어 모드가 아니거나 회신 없음) 모터를
+   건드리지 않고 중단합니다. 이걸 빼먹으면 엎드린 로봇에 다리를 뻗은 자세를
+   Kp 60 으로 명령해 점프 후 전복합니다 (2026-09-17 실기).
+3. **부드러운 기립** — 현재 관절각에서 기본 자세까지 `--stand-time` 동안 선형
    보간하며 게인을 램프업합니다.
-3. **기울임 자동 셧다운** — roll/pitch 가 0.7 rad 를 넘으면 모든 제어를 끊고
+4. **기울임 자동 셧다운** — roll/pitch 가 0.7 rad 를 넘으면 모든 제어를 끊고
    Kp=0 / Kd 만 남기는 damping 으로 전환합니다.
-4. **관절 가동범위 클램프** — Go1 URDF 한계에 soft factor 0.9 를 적용해 목표각을
+5. **관절 가동범위 클램프** — Go1 URDF 한계에 soft factor 0.9 를 적용해 목표각을
    사전 차단합니다.
-5. **명령 클립** — 학습 분포 밖 속도 명령을 잘라냅니다.
-6. **정상 종료 시 lie_down** — damping 직행은 Kp=0 이라 뚝 떨어지므로, 엎드림
+6. **명령 클립** — 학습 분포 밖 속도 명령을 잘라냅니다.
+7. **정상 종료 시 lie_down** — damping 직행은 Kp=0 이라 뚝 떨어지므로, 엎드림
    자세로 천천히 보간한 뒤 damping 합니다.
 
 ## 기술 사양

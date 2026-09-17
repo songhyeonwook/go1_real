@@ -156,10 +156,28 @@ class Deployer:
 
     # ---- 시퀀스 ----------------------------------------------------------
 
+    def state_warmup(self, seconds=1.0):
+        """모터 명령 전에 zero-torque 패킷으로 상태 회신을 받아 둡니다.
+
+        Go1 MCU 는 패킷을 보낸 클라이언트에게만 low-level 상태를 회신하므로,
+        이걸 건너뛰면 stand_up() 이 시작 자세를 전부 0 으로 읽어 엎드린 로봇에
+        다리를 완전히 뻗은 자세를 Kp 60 으로 명령합니다 (실기: 점프 후 전복).
+        """
+        for _ in range(int(seconds / C.CONTROL_DT)):
+            self.robot.send_poll()
+            self.robot.read_state()
+            if not self.args.mock:
+                time.sleep(C.CONTROL_DT)
+
     def stand_up(self, duration=3.0):
         """현재 자세 → DEFAULT_JOINT_POS 로 부드럽게 보간 (STAND_KP)."""
         print("[STAND] 기립 시퀀스 시작 (Enter = 중단)")
         q0 = self.robot.read_state().q.copy()
+        if float(np.abs(q0).max()) < 1e-6:
+            # 상태를 한 번도 못 받은 것 — 0 에서 보간을 시작하면 안 됩니다.
+            raise RuntimeError(
+                "stand_up: 관절 상태가 전부 0 (MCU 회신 없음). 하위제어 모드인지, "
+                "state_warmup() 을 거쳤는지 확인하세요")
         n = int(duration / C.CONTROL_DT)
         for k in range(n):
             t0 = time.monotonic()
@@ -309,7 +327,10 @@ def main():
     ap.add_argument("--vx", type=float, default=0.3)
     ap.add_argument("--vy", type=float, default=0.0)
     ap.add_argument("--wz", type=float, default=0.0)
-    ap.add_argument("--duration", type=float, default=20.0)
+    ap.add_argument("--duration", type=float, default=20.0,
+                    help="모드 본체의 실행 시간(s). dry-run=관측 출력, stand=기립 유지, "
+                         "hang/walk=정책 실행. 기립(--stand-time)·lie_down 은 별도. "
+                         "Enter 로 언제든 조기 종료. 처음엔 10 권장")
     ap.add_argument("--kp", type=float, default=C.KP)
     ap.add_argument("--kd", type=float, default=C.KD)
     ap.add_argument("--power-protect", type=int,
@@ -357,6 +378,7 @@ def main():
         if args.mode == "dry-run":
             dep.dry_run(args.duration)
             return
+        dep.state_warmup()
         dep.stand_up(duration=args.stand_time)
         dep.hold_default(1.0)
         if args.mode == "stand":

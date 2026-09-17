@@ -93,6 +93,7 @@ def _mock_loop(injured_leg=None):
         def estimate(self):
             return None
 
+    dep.state_warmup(seconds=0.1)
     dep.stand_up(duration=0.2)
     dep.run_policy(_ZeroPolicy(), np.zeros(3), duration=0.5)
 
@@ -122,6 +123,33 @@ def test_mock_deploy_loop_injured():
           f"calf held at {q_last[8 + leg]:.2f} rad")
 
 
+def test_stand_refuses_zero_state():
+    """MCU 회신을 못 받아 q 가 전부 0 이면 stand_up 은 모터를 건드리기 전에 중단."""
+    from deploy import Deployer
+
+    class _SilentRobot(MockGo1Interface):
+        def read_state(self):
+            st = super().read_state()
+            st.q[:] = 0.0
+            return st
+
+    args = argparse.Namespace(mock=True, kp=C.KP, kd=C.KD, vx_floor=0.0,
+                              stand_kp=C.STAND_KP, stand_kd=C.STAND_KD,
+                              gain_blend=C.GAIN_BLEND_TIME,
+                              injured_leg=None, log_npz=None)
+    robot = _SilentRobot()
+    dep = Deployer(robot, args)
+    dep.state_warmup(seconds=0.1)
+    try:
+        dep.stand_up(duration=0.2)
+    except RuntimeError as e:
+        assert "전부 0" in str(e), e
+    else:
+        raise AssertionError("stand_up 이 q=0 상태에서 중단하지 않음")
+    assert len(robot.sent) == 0, "중단 전에 위치 명령이 나감"
+    print("ok: stand_up refuses all-zero joint state (no motor command sent)")
+
+
 def test_policy_bundle(path):
     from policy import Policy
 
@@ -148,6 +176,7 @@ if __name__ == "__main__":
     test_command_clip()
     test_mock_deploy_loop()
     test_mock_deploy_loop_injured()
+    test_stand_refuses_zero_state()
     if cli.policy:
         test_policy_bundle(cli.policy)
 
