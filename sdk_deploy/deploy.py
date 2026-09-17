@@ -79,6 +79,11 @@ class Deployer:
         self.injured_leg = args.injured_leg
         self.one_hot = peg_leg_one_hot(self.injured_leg)
         self._aux_ema = None
+        # stand / dry-run 용 상태 로그 (정책 구간은 run_policy 가 따로 기록)
+        self._static_log = None
+        if getattr(args, "log_npz", None):
+            self._static_log = {k: [] for k in
+                                ("t", "q", "dq", "q_des", "ff", "quat", "gyro")}
         if self.injured_leg is not None:
             print("[INJURY] %s 다리 부목 모드 — one_hot=%s, calf action 마스킹, "
                   "고정각 %.2f rad" % (C.LEG_NAMES[self.injured_leg],
@@ -116,6 +121,26 @@ class Deployer:
         return msg
 
     # ---- 공통 루프 유틸 --------------------------------------------------
+
+    def _static_log_step(self, t0, state, q_des):
+        if self._static_log is None:
+            return
+        L = self._static_log
+        L["t"].append(t0)
+        L["q"].append(state.q.copy())
+        L["dq"].append(state.dq.copy())
+        L["q_des"].append(np.asarray(q_des, dtype=np.float64).copy())
+        L["ff"].append(state.foot_force.copy())
+        L["quat"].append(state.quat_wxyz.copy())
+        L["gyro"].append(state.gyro.copy())
+
+    def save_static_log(self):
+        """stand / dry-run 의 상태 로그 저장 (hang/walk 는 run_policy 가 저장)."""
+        L = self._static_log
+        if L is None or not L["t"]:
+            return
+        np.savez(self.args.log_npz, **{k: np.asarray(v) for k, v in L.items()})
+        print(f"[LOG] {len(L['t'])} steps -> {self.args.log_npz}")
 
     def _contact_count(self, state):
         return int(((state.foot_force - C.FOOT_FORCE_BIAS)
@@ -210,6 +235,7 @@ class Deployer:
             self.robot.send_positions(
                 C.DEFAULT_JOINT_POS, self.args.stand_kp, self.args.stand_kd
             )
+            self._static_log_step(t0, state, C.DEFAULT_JOINT_POS)
             self._telemetry(time.monotonic(), state)
             self._sleep_rest(t0)
 
@@ -239,6 +265,7 @@ class Deployer:
             kp = self.args.stand_kp + (self.args.kp - self.args.stand_kp) * b
             kd = self.args.stand_kd + (self.args.kd - self.args.stand_kd) * b
             self.robot.send_positions(C.DEFAULT_JOINT_POS, kp, kd)
+            self._static_log_step(t0, state, C.DEFAULT_JOINT_POS)
             self._telemetry(time.monotonic(), state)
             self._sleep_rest(t0)
 
@@ -335,6 +362,7 @@ class Deployer:
                 break
             self.robot.send_poll()
             state = self.robot.read_state()
+            self._static_log_step(t0, state, np.full(12, np.nan))
             now = time.monotonic()
             if now - self.last_print >= 1.0:
                 self.last_print = now
@@ -385,7 +413,8 @@ def main():
     ap.add_argument("--stand-time", type=float, default=5.0,
                     help="기립 보간 시간(s). 길수록 부드러움")
     ap.add_argument("--log-npz", default=None,
-                    help="정책 구간의 스텝별 상태/명령을 .npz 로 저장 (오프라인 진단용)")
+                    help="스텝별 상태를 .npz 로 저장. hang/walk 는 정책 구간(관측·행동 포함), "
+                         "stand/dry-run 은 q/dq/ff/IMU. scripts/analyze_walk_log.py 로 요약")
     ap.add_argument("--mock", action="store_true",
                     help="SDK 없이 mock 로봇으로 코드 경로 검증")
     args = ap.parse_args()
@@ -430,6 +459,8 @@ def main():
     except KeyboardInterrupt:
         print("[STOP] 사용자 중단")
     finally:
+        if args.mode in ("stand", "dry-run"):
+            dep.save_static_log()   # Ctrl-C / 가드로 끊겨도 저장
         if args.mode != "dry-run":
             print("[STOP] damping 모드로 종료")
             for _ in range(int(1.0 / C.CONTROL_DT)):

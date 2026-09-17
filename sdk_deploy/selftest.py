@@ -158,6 +158,30 @@ def test_stand_refuses_zero_state():
     print("ok: stand_up refuses all-zero joint state (no motor command sent)")
 
 
+def test_stand_log():
+    """--log-npz 가 stand 경로(hold_default)에서도 저장되는지."""
+    import os
+    import tempfile
+    from deploy import Deployer
+
+    path = os.path.join(tempfile.gettempdir(), "selftest_stand.npz")
+    args = argparse.Namespace(mock=True, kp=C.KP, kd=C.KD, vx_floor=0.0,
+                              stand_kp=C.STAND_KP, stand_kd=C.STAND_KD,
+                              gain_blend=C.GAIN_BLEND_TIME,
+                              injured_leg=None, log_npz=path)
+    dep = Deployer(MockGo1Interface(), args)
+    dep.state_warmup(seconds=0.1)
+    dep.stand_up(duration=0.2)
+    dep.hold_default(0.3)
+    dep.save_static_log()
+    d = np.load(path)
+    assert set(d.files) >= {"t", "q", "dq", "q_des", "ff", "quat", "gyro"}, d.files
+    assert len(d["t"]) == int(0.3 / C.CONTROL_DT), len(d["t"])
+    assert d["q"].shape == (len(d["t"]), 12)
+    os.remove(path)
+    print("ok: stand --log-npz saves q/dq/ff/IMU")
+
+
 def test_policy_bundle(path):
     from policy import Policy
 
@@ -185,6 +209,7 @@ if __name__ == "__main__":
     test_mock_deploy_loop()
     test_mock_deploy_loop_injured()
     test_stand_refuses_zero_state()
+    test_stand_log()
     if cli.policy:
         test_policy_bundle(cli.policy)
 

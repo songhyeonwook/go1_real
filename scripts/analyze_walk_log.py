@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-"""deploy.py --log-npz 로 남긴 정책 구간 로그를 요약합니다 (NX 의 numpy 1.13 에서 돌아감).
+"""deploy.py --log-npz 로그를 요약합니다 (NX 의 numpy 1.13 에서 돌아감).
 
-  python3 scripts/analyze_walk_log.py walk1.npz
+  python3 scripts/analyze_walk_log.py walk1.npz     # hang/walk: 정책 구간
+  python3 scripts/analyze_walk_log.py stand1.npz    # stand/dry-run: 정지 상태
+
+정지 로그는 발힘 분포(대각 비대칭), 자세 바이어스, 관절별 정상상태 오차, dq 센서
+노이즈를 냅니다 — 무게중심/영점/바닥 문제를 가르는 용도입니다.
 
 루프 타이밍, 자세(roll/pitch/yaw 드리프트), PD 토크 추정(Kp/Kd 는 학습 게인),
 관절 추종 오차, 행동 스펙트럼, 발 접촉(duty / 스텝 주파수 / 스윙 길이 / 대각 동기),
@@ -28,8 +32,50 @@ def quat_to_rpy(quat_wxyz):
     return roll, pitch, yaw
 
 
+def dq_noise_rms(dq, cutoff_hz=10.0):
+    D = dq - dq.mean(0)
+    F = np.fft.rfft(D, axis=0)
+    f = np.fft.rfftfreq(len(D), C.CONTROL_DT)
+    return np.sqrt((np.abs(F[f > cutoff_hz]) ** 2).sum(0) * 2) / len(D)
+
+
+def main_static(d):
+    t, q, dq, qd, ff, quat, gyro = [d[k] for k in ("t", "q", "dq", "q_des", "ff", "quat", "gyro")]
+    T = t - t[0]
+    dts = np.diff(t)
+    print("== 정지 로그: %d steps, %.2f s, dt mean %.1f ms max %.1f ms ==" % (len(t), T[-1], dts.mean() * 1e3, dts.max() * 1e3))
+    roll, pitch, yaw = quat_to_rpy(quat)
+    print("== 자세 (IMU) ==")
+    print("  roll  %+.3f rad (%+.1f deg)  std %.3f" % (roll.mean(), np.degrees(roll.mean()), roll.std()))
+    print("  pitch %+.3f rad (%+.1f deg)  std %.3f" % (pitch.mean(), np.degrees(pitch.mean()), pitch.std()))
+    print("  gyro bias %s rad/s" % np.round(gyro.mean(0), 4).tolist())
+    fm = ff.mean(0)
+    print("== 발힘 raw (FL FR RL RR) ==")
+    print("  mean %s  std %s" % (np.round(fm).tolist(), np.round(ff.std(0), 1).tolist()))
+    tot = fm.sum()
+    print("  분율  %s" % np.round(fm / tot, 2).tolist())
+    print("  대각 FL+RR %.2f  vs  FR+RL %.2f   | 좌 %.2f 우 %.2f | 앞 %.2f 뒤 %.2f"
+          % ((fm[0] + fm[3]) / tot, (fm[1] + fm[2]) / tot, (fm[0] + fm[2]) / tot, (fm[1] + fm[3]) / tot,
+             (fm[0] + fm[1]) / tot, (fm[2] + fm[3]) / tot))
+    print("  (센서 스케일이 발마다 다를 수 있음 — 같은 로봇을 180도 돌린 로그와 비교할 것)")
+    if not np.isnan(qd).any():
+        e = qd - q
+        print("== 관절 정상상태 오차 q_des-q (FL FR RL RR) ==")
+        for j, name in enumerate(("hip", "thigh", "calf")):
+            v = e[:, 4 * j:4 * j + 4].mean(0)
+            print("  %-5s %s   L-R 앞 %+.3f 뒤 %+.3f" % (name, np.round(v, 3).tolist(), v[0] - v[1], v[2] - v[3]))
+    print("== 관절각 q 평균 (FL FR RL RR) ==")
+    for j, name in enumerate(("hip", "thigh", "calf")):
+        print("  %-5s %s" % (name, np.round(q[:, 4 * j:4 * j + 4].mean(0), 3).tolist()))
+    print("== dq 센서 노이즈 (>10 Hz rms, rad/s; 학습 노이즈 std 0.02) ==")
+    print("  hip %s  thigh %s  calf %s"
+          % tuple(np.round(dq_noise_rms(dq)[i:i + 4], 3).tolist() for i in (0, 4, 8)))
+
+
 def main(path):
     d = np.load(path)
+    if "action" not in d.files:
+        return main_static(d)
     t, q, dq, qd, a = d["t"], d["q"], d["dq"], d["q_des"], d["action"]
     ff, quat, gyro, cmd = d["ff"], d["quat"], d["gyro"], d["cmd"]
     T = t - t[0]
