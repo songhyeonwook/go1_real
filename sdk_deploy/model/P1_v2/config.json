@@ -1,0 +1,286 @@
+{
+    "phase": "phase1",
+    "train": {
+        "project_name": "unitree_go1_antalgic",
+        "task": "Template-Go1-Lab-v0",
+        "agent": "rsl_rl_phase1_cfg_entry_point",
+        "num_envs": 2048,
+        "max_iterations": 3000,
+        "seed": 42,
+        "num_steps_per_env": 24,
+        "normalize": {
+            "enable": true,
+            "obs": {
+                "angular_vel": 1.0,
+                "gravity": 1.0,
+                "cmd_vel": 1.0,
+                "joint_pos": 1.0,
+                "joint_vel": 0.23,
+                "action": 1.0
+            },
+            "priv": {
+                "splint_length": 1.0,
+                "linear_vel": 1.0
+            }
+        },
+        "gradient_length": null,
+        "splint_loss_coef": null,
+        "vel_loss_coef": null,
+        "mse_norm": null
+    },
+    "environment": {
+        "path": "/home/shw/go1_lod/scripts/rsl_rl/configs/env/healthy.yaml",
+        "values": {
+            "name": "healthy",
+            "use_peg_leg_action_mask": false,
+            "peg_leg": {
+                "enabled": false,
+                "grace_steps": 10,
+                "attach": "thigh",
+                "prob_peg_leg": 0.0,
+                "target_leg": "env_fixed",
+                "injured_splint_friction_only": true,
+                "splint_length_range": [
+                    0.33,
+                    0.45
+                ],
+                "foot_friction_range": [
+                    0.5,
+                    1.5
+                ]
+            },
+            "actuator": {
+                "type": "pd",
+                "pd": {
+                    "kp": 20.0,
+                    "kd": 0.5,
+                    "effort_limit": 23.7,
+                    "velocity_limit": 30.0,
+                    "friction": 0.0
+                }
+            },
+            "simulation": {
+                "replicate_physics": false,
+                "clone_in_fabric": false,
+                "gpu": {
+                    "gpu_total_aggregate_pairs_capacity": 8388608,
+                    "gpu_found_lost_pairs_capacity": 8388608
+                },
+                "terrain": {
+                    "flat": true,
+                    "curriculum": {
+                        "terrain_levels": null
+                    }
+                },
+                "contact_compliance": {
+                    "enabled": false,
+                    "stiffness": 0.0,
+                    "damping": 2000.0
+                }
+            },
+            "command": {
+                "linear_velocity_x": {
+                    "min": -1.0,
+                    "max": 1.0
+                },
+                "linear_velocity_y_abs": 1.0,
+                "angular_velocity_yaw_abs": 1.0
+            },
+            "observation": {
+                "use_height_scan": false,
+                "privileged": {
+                    "enabled": true
+                }
+            },
+            "domain_randomization": {
+                "enabled": true,
+                "ground_friction": {
+                    "enabled": true,
+                    "static_range": [
+                        0.2,
+                        1.5
+                    ],
+                    "dynamic_range": [
+                        0.15,
+                        1.2
+                    ]
+                },
+                "robot_mass": {
+                    "enabled": true,
+                    "body_name": "trunk",
+                    "scale_range": [
+                        0.85,
+                        1.15
+                    ]
+                },
+                "random_push": {
+                    "enabled": true,
+                    "interval_range_s": [
+                        8.0,
+                        12.0
+                    ],
+                    "velocity_x_range": [
+                        -0.5,
+                        0.5
+                    ],
+                    "velocity_y_range": [
+                        -0.5,
+                        0.5
+                    ]
+                },
+                "observation_noise": {
+                    "enabled": true,
+                    "joint_pos_std": 0.02,
+                    "joint_vel_std": 0.02,
+                    "base_ang_vel_std": 0.05,
+                    "projected_gravity_std": 0.05
+                },
+                "actuator_gains": {
+                    "enabled": true,
+                    "kp_scale_range": [
+                        0.85,
+                        1.15
+                    ],
+                    "kd_scale_range": [
+                        0.85,
+                        1.15
+                    ]
+                },
+                "joint_parameters": {
+                    "enabled": true,
+                    "friction_range": [
+                        0.0,
+                        0.1
+                    ],
+                    "armature_range": [
+                        0.0,
+                        0.01
+                    ]
+                },
+                "trunk_com": {
+                    "enabled": true,
+                    "body_name": "trunk",
+                    "x_range": [
+                        -0.02,
+                        0.02
+                    ],
+                    "y_range": [
+                        -0.02,
+                        0.02
+                    ],
+                    "z_range": [
+                        -0.02,
+                        0.02
+                    ]
+                }
+            },
+            "payload": {
+                "enabled": false,
+                "front_payload_kg": 0.0,
+                "front_com_x_m": 0.0,
+                "front_com_z_m": 0.0
+            },
+            "reward": {
+                "task": {
+                    "enabled": true,
+                    "track_linear_velocity_weight": 2.5,
+                    "track_angular_velocity_weight": 0.75,
+                    "linear_velocity_z_weight": -2.0
+                },
+                "gait_tuning": {
+                    "enabled": true,
+                    "feet_air_time_weight": 0.25,
+                    "action_rate_weight": -0.05,
+                    "angular_velocity_xy_weight": -0.1
+                },
+                "energy": {
+                    "torque_penalty_scale": 5,
+                    "dof_acc_penalty_scale": 0.5,
+                    "action_rate_penalty_scale": 0.5
+                },
+                "posture": {
+                    "flat_orientation_weight": 0.0,
+                    "base_height_target": 0.27,
+                    "base_height_weight": -0.15
+                },
+                "calf_contact": {
+                    "enabled": false
+                },
+                "survival_bonus": {
+                    "enabled": true,
+                    "weight": 0.25
+                },
+                "joint_mirror_symmetry": {
+                    "enabled": false,
+                    "weight": -2.0
+                },
+                "symmetric": {
+                    "enabled": false
+                },
+                "injury": {
+                    "enabled": false
+                }
+            },
+            "termination": {
+                "root_too_low": {
+                    "enabled": true,
+                    "minimum_height": 0.15
+                },
+                "bad_orientation": {
+                    "enabled": true,
+                    "limit_angle": 0.8
+                }
+            }
+        }
+    },
+    "checkpoint": {
+        "mode": "scratch",
+        "teacher": null,
+        "student": null,
+        "load_optimizer": false,
+        "reset_iteration": true,
+        "reset_noise_std": true
+    },
+    "common": {
+        "rsl_logger": "tensorboard",
+        "device": "cuda:0"
+    },
+    "evaluation": {
+        "peg_leg": "normal"
+    },
+    "exploration": {
+        "noise_std_type": "log",
+        "init_noise_std": 1.0,
+        "min_action_std": 0.001,
+        "enforce_min_std": true
+    },
+    "rsl_logger": "tensorboard",
+    "runtime": {
+        "run_name": "2026_09_21_22_26_08_phase1_s42_P1_v2",
+        "run_tag": "P1_v2",
+        "phase_config_path": "/home/shw/go1_lod/scripts/rsl_rl/configs/phase/1/phase1.yaml",
+        "log_dir": "/home/shw/go1_lod/scripts/rsl_rl/logs/unitree_go1_antalgic/2026_09_21_22_26_08_phase1_s42_P1_v2",
+        "cli_args": {
+            "phase_config_path": "configs/phase/1/phase1.yaml",
+            "common_config_path": "/home/shw/go1_lod/scripts/rsl_rl/configs/common.yaml",
+            "log_config_path": "/home/shw/go1_lod/scripts/rsl_rl/configs/logger.yaml",
+            "run_tag": "P1_v2",
+            "debug_obs": false,
+            "debug_obs_envs": 10,
+            "headless": true,
+            "livestream": -1,
+            "enable_cameras": false,
+            "xr": false,
+            "device": "cuda:0",
+            "cpu": false,
+            "verbose": false,
+            "info": false,
+            "experience": "",
+            "rendering_mode": null,
+            "kit_args": "",
+            "anim_recording_enabled": false,
+            "anim_recording_start_time": 0,
+            "anim_recording_stop_time": 10
+        }
+    }
+}
