@@ -11,7 +11,7 @@ so this runs on plain torch — no Isaac Sim, no Isaac Lab, no GPU, no env.
 
 Outputs (default: <checkpoint dir>/exported/):
     policy.pt          TorchScript, (obs, h_in, c_in) -> (actions, h_out, c_out)
-    policy.onnx        same graph, opset 13
+    policy.onnx        same graph, opset 11
     policy_numpy.npz   pure-NumPy bundle for the onboard NX (no torch/onnxruntime)
     aux_heads.npz      splint_head / vel_head, applied to h_out
     policy_io.json     observation layout + bundle metadata
@@ -264,7 +264,7 @@ def main():
         onnx_path,
         input_names=["obs", "h_in", "c_in"],
         output_names=["actions", "h_out", "c_out"],
-        opset_version=13,
+        opset_version=11,
     )
 
     bundle = _numpy_bundle(model)
