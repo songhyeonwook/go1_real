@@ -107,6 +107,21 @@ class Policy:
             raise ValueError(
                 ".npz obs_dim {} 와 가중치 입력 {} 불일치 — 손상된 번들?".format(
                     bundle_obs, self._in_dim))
+        # 학생 구조. lstm_aux_mlp (go1_lod main 9c88b43 이후): 정책 MLP 입력이
+        # [h | peg one-hot(4) | L_hat*gate(1) | v_hat(3)] = 264 이고, 세 헤드를 여기서 직접 계산한다.
+        arch = data["arch"].tobytes().decode() if "arch" in data else "lstm_mlp"
+        self._aux_feedback = arch == "lstm_aux_mlp"
+        if self._aux_feedback:
+            self._heads = {k: data[k].astype(np.float32) for k in
+                           ("splint_weight", "splint_bias", "vel_weight", "vel_bias",
+                            "peg_weight", "peg_bias")}
+            self._onehot = (int(data["onehot_start"]), int(data["onehot_end"]))
+        mlp_in = int(self._layers[0][0].shape[1])
+        expect = self._hidden + (8 if self._aux_feedback else 0)
+        if mlp_in != expect:
+            raise ValueError(
+                ".npz arch {!r}: 정책 MLP 입력 {} != {} — export 스크립트와 번들이 어긋났습니다".format(
+                    arch, mlp_in, expect))
         self._backend = "numpy"
 
     def _load_onnx(self, path):
@@ -229,9 +244,25 @@ class Policy:
         self._h = (o * np.tanh(self._c)).astype(np.float32)
 
         h = self._h
+        if self._aux_feedback:
+            h = self._policy_input(x, h)
         last = len(self._layers) - 1
         for k, (weight, bias) in enumerate(self._layers):
             h = h @ weight.T + bias
             if k < last:
                 h = np.where(h > 0.0, h, np.exp(h) - 1.0)  # ELU
         return h
+
+    def _policy_input(self, x, h):
+        """lstm_aux_mlp: [h | peg one-hot | L_hat * gate | v_hat] (264).
+        peg one-hot = (argmax(peg 로짓) == [0,1,2,3]) → 정상(4) 이면 전부 0.
+        gate = 관측 peg_leg_one_hot 합 (정상 0 / 부상 1) → 정상 로봇의 L_hat 입력은 0.
+        세 추정값은 .onnx/.pt 그래프 안에 같은 식으로 들어 있다 (export_p3_student.py)."""
+        w = self._heads
+        logits = w["peg_weight"] @ h + w["peg_bias"]
+        peg_in = (np.argmax(logits) == np.arange(4)).astype(np.float32)
+        a, b = self._onehot
+        gate = np.float32(x[a:b].sum())
+        L_hat = (w["splint_weight"] @ h + w["splint_bias"]) * gate
+        v_hat = w["vel_weight"] @ h + w["vel_bias"]
+        return np.concatenate([h, peg_in, L_hat, v_hat]).astype(np.float32)

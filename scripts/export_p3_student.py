@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
 """Export the Phase-3 LSTM student from an rsl_rl checkpoint into a deploy bundle.
 
-The checkpoint is a full `Phase3StudentTeacher` (teacher MLP + student LSTM + two
+The checkpoint is a full `Phase3StudentTeacher` (teacher MLP + student LSTM +
 auxiliary heads). Deployment only needs the student path, and that path is fully
-determined by the state_dict:
+determined by the state_dict. Two student structures exist and are auto-detected
+from `student.0.weight`:
 
-    obs(49) --x scale--> LSTM(49 -> 256) --> MLP [512, 256, 128] elu --> action(12)
+  legacy (<= P3_v10, policy input 256):
+    obs(49) --x scale--> LSTM(49 -> 256) = h --> MLP [512, 256, 128] elu --> action(12)
+
+  aux-feedback (go1_lod main 9c88b43 "fixed model structure", policy input 264):
+    h --> splint_head(1) = L_hat [m], vel_head(3) = v_hat [m/s], peg_head(5) = logits
+    peg one-hot(4) = (argmax(logits) == [0,1,2,3]); argmax 4 (healthy) -> all zeros
+    gate           = sum(obs[45:49])  (raw peg_leg_one_hot: healthy 0 / injured 1)
+    MLP input      = [h | peg one-hot | L_hat * gate | v_hat] (264) --> action(12)
+  The heads output physical units directly (no de-normalisation).
 
 so this runs on plain torch — no Isaac Sim, no Isaac Lab, no GPU, no env.
 
@@ -55,6 +64,9 @@ OBS_DIM = sum(d for _, d in OBS_LAYOUT)
 ACTION_DIM = 12
 HIDDEN = 256
 MLP_DIMS = [512, 256, 128]
+ONE_HOT = slice(45, 49)        # peg_leg_one_hot inside obs
+PEG_CLASSES = 5                # FL, FR, RL, RR, healthy
+AUX_IN_DIM = 4 + 1 + 3         # [peg one-hot | L_hat | v_hat] appended to h (aux-feedback structure)
 
 # nn.LSTM packs gates as [input, forget, cell, output]; the NumPy backend in
 # sdk_deploy/policy.py assumes that order.
@@ -67,6 +79,10 @@ class Phase3StudentDeploy(nn.Module):
     rsl_rl's Memory.forward in inference mode is `rnn(input.unsqueeze(0), hidden)`
     (networks/memory.py), i.e. one timestep of a plain seq-first nn.LSTM — so this
     is an exact reconstruction, not an approximation.
+
+    `aux_feedback` (detected from the checkpoint) switches between the legacy
+    256-input MLP and the 264-input MLP fed with the three heads' estimates
+    (phase3_student.py `_policy_input`). Both keep the same (obs, h, c) interface.
     """
 
     def __init__(self, sd):
@@ -75,8 +91,14 @@ class Phase3StudentDeploy(nn.Module):
         self.rnn = nn.LSTM(OBS_DIM, HIDDEN, 1)
         self.rnn.load_state_dict(_sub(sd, "memory_s.rnn."))
 
+        mlp_in = int(sd["student.0.weight"].shape[1])
+        self.aux_feedback = mlp_in == HIDDEN + AUX_IN_DIM
+        if not self.aux_feedback and mlp_in != HIDDEN:
+            raise ValueError(f"student.0.weight input {mlp_in} is neither {HIDDEN} (legacy) "
+                             f"nor {HIDDEN + AUX_IN_DIM} (aux-feedback)")
+
         layers = []
-        prev = HIDDEN
+        prev = mlp_in
         for h in MLP_DIMS:
             layers += [nn.Linear(prev, h), nn.ELU()]
             prev = h
@@ -84,9 +106,38 @@ class Phase3StudentDeploy(nn.Module):
         self.mlp = nn.Sequential(*layers)
         self.mlp.load_state_dict(_sub(sd, "student."))
 
+        # heads (always exported; only wired into the policy for aux_feedback)
+        self.splint_head = nn.Linear(HIDDEN, 1)
+        self.splint_head.load_state_dict(_sub(sd, "splint_head."))
+        self.vel_head = nn.Linear(HIDDEN, 3)
+        self.vel_head.load_state_dict(_sub(sd, "vel_head."))
+        # always a real module (TorchScript cannot call an Optional); zeros for legacy checkpoints
+        self.peg_head = nn.Linear(HIDDEN, PEG_CLASSES)
+        if self.aux_feedback:
+            self.peg_head.load_state_dict(_sub(sd, "peg_head."))
+        else:
+            with torch.no_grad():
+                self.peg_head.weight.zero_()
+                self.peg_head.bias.zero_()
+
+    def policy_input(self, obs, h):
+        """[h | peg one-hot | L_hat * gate | v_hat] — mirrors phase3_student._policy_input.
+        Only comparison / sum ops around the heads, so the ONNX graph stays TensorRT-friendly."""
+        logits = self.peg_head(h)                                      # (1,5)
+        idx = logits.argmax(dim=-1, keepdim=True)                      # (1,1)
+        legs = torch.arange(4, device=h.device).unsqueeze(0)           # (1,4)
+        peg_in = (idx == legs).to(h.dtype)                             # (1,4)
+        gate = obs[:, 45:49].sum(dim=-1, keepdim=True)                 # (1,1) raw peg_leg_one_hot sum (ONE_HOT; literal for TorchScript)
+        L_hat = self.splint_head(h) * gate                             # (1,1)
+        v_hat = self.vel_head(h)                                       # (1,3)
+        return torch.cat([h, peg_in, L_hat, v_hat], dim=-1)
+
     def forward(self, obs, h_in, c_in):
         out, (h_out, c_out) = self.rnn((obs * self.obs_scale).unsqueeze(0), (h_in, c_in))
-        return self.mlp(out.squeeze(0)), h_out, c_out
+        h = out.squeeze(0)
+        if self.aux_feedback:
+            return self.mlp(self.policy_input(obs, h)), h_out, c_out
+        return self.mlp(h), h_out, c_out
 
 
 def _sub(sd, prefix):
@@ -150,6 +201,15 @@ def _numpy_bundle(model):
         bundle[f"{2 * i}_weight"] = lin.weight.detach().numpy().astype(np.float32)
         bundle[f"{2 * i}_bias"] = lin.bias.detach().numpy().astype(np.float32)
     bundle["num_mlp_layers"] = np.int64(len(linears))
+    if model.aux_feedback:
+        # the MLP input is [h | peg one-hot | L_hat * gate | v_hat]; sdk_deploy/policy.py
+        # builds it from these heads when arch == lstm_aux_mlp
+        f = lambda t: t.detach().numpy().astype(np.float32)
+        bundle["arch"] = np.array(b"lstm_aux_mlp")
+        bundle["splint_weight"], bundle["splint_bias"] = f(model.splint_head.weight), f(model.splint_head.bias)
+        bundle["vel_weight"], bundle["vel_bias"] = f(model.vel_head.weight), f(model.vel_head.bias)
+        bundle["peg_weight"], bundle["peg_bias"] = f(model.peg_head.weight), f(model.peg_head.bias)
+        bundle["onehot_start"], bundle["onehot_end"] = np.int64(ONE_HOT.start), np.int64(ONE_HOT.stop)
     return bundle
 
 
@@ -164,6 +224,8 @@ def _numpy_forward(bundle, obs, h, c):
     h = (o * np.tanh(c)).astype(np.float32)
 
     x = h
+    if bytes(bundle["arch"]) == b"lstm_aux_mlp":
+        x = _numpy_policy_input(bundle, obs, h)
     n = int(bundle["num_mlp_layers"])
     for k in range(n):
         x = x @ bundle[f"{2 * k}_weight"].T + bundle[f"{2 * k}_bias"]
@@ -172,21 +234,36 @@ def _numpy_forward(bundle, obs, h, c):
     return x, h, c
 
 
-def _aux_heads(sd):
-    """splint_head / vel_head + their de-normalisation constants.
+def _numpy_policy_input(bundle, obs, h):
+    """[h | peg one-hot(4) | L_hat * gate | v_hat(3)] from the heads — same as sdk_deploy/policy.py."""
+    logits = bundle["peg_weight"] @ h + bundle["peg_bias"]
+    peg_in = (np.argmax(logits) == np.arange(4)).astype(np.float32)
+    gate = np.float32(obs[int(bundle["onehot_start"]):int(bundle["onehot_end"])].sum())
+    L_hat = (bundle["splint_weight"] @ h + bundle["splint_bias"]) * gate
+    v_hat = bundle["vel_weight"] @ h + bundle["vel_bias"]
+    return np.concatenate([h, peg_in, L_hat, v_hat]).astype(np.float32)
 
-    Both read the LSTM output h_t, which the exported graph returns as h_out — so
-    the robot gets L_hat and v_hat from two small matmuls, no second graph:
+
+def _aux_heads(sd):
+    """splint_head / vel_head (+ peg_head) applied to h_out by sdk_deploy/policy.py AuxHeads:
         L_hat = (splint_w @ h + splint_b) * splint_std + splint_mean   [m]
         v_hat = (vel_w    @ h + vel_b)    * vel_std    + vel_mean      [m/s]
-    """
+    legacy checkpoints carry norm_* mean/std buffers (heads trained in z-space);
+    aux-feedback checkpoints output physical units directly, so mean 0 / std 1 are written."""
     f = lambda k: sd[k].detach().numpy().astype(np.float32)
-    return {
+    out = {
         "splint_weight": f("splint_head.weight"), "splint_bias": f("splint_head.bias"),
         "vel_weight": f("vel_head.weight"), "vel_bias": f("vel_head.bias"),
-        "splint_mean": f("norm_splint_mean"), "splint_std": f("norm_splint_std"),
-        "vel_mean": f("norm_vel_mean"), "vel_std": f("norm_vel_std"),
     }
+    if "norm_splint_mean" in sd:
+        out.update({"splint_mean": f("norm_splint_mean"), "splint_std": f("norm_splint_std"),
+                    "vel_mean": f("norm_vel_mean"), "vel_std": f("norm_vel_std")})
+    else:
+        out.update({"splint_mean": np.float32(0.0), "splint_std": np.float32(1.0),
+                    "vel_mean": np.zeros(3, np.float32), "vel_std": np.float32(1.0)})
+    if "peg_head.weight" in sd:
+        out["peg_weight"], out["peg_bias"] = f("peg_head.weight"), f("peg_head.bias")
+    return out
 
 
 def _reference_obs(n, seed=0):
@@ -235,7 +312,9 @@ def main():
     print(f"checkpoint : {ckpt_path}")
     sd, it = _load_state_dict(ckpt_path)
     model = Phase3StudentDeploy(sd).eval()
+    struct = "aux-feedback (MLP input 264 = h | peg one-hot | L_hat | v_hat)" if model.aux_feedback else "legacy (MLP input 256 = h)"
     print(f"  iter={it}, obs={OBS_DIM}, hidden={HIDDEN}, mlp={MLP_DIMS}, action={ACTION_DIM}")
+    print(f"  structure  : {struct}")
     scale = model.obs_scale.numpy()
     spans = ", ".join(f"{n}={scale[o]:g}" for n, o in
                       zip([n for n, _ in OBS_LAYOUT], np.cumsum([0] + [d for _, d in OBS_LAYOUT])))
@@ -320,10 +399,15 @@ def main():
         "obs_scale": [float(x) for x in scale],
         "action": {"scale": 0.25, "use_default_offset": True},
         "control": {"dt": 0.02, "kp": 20.0, "kd": 0.5},
+        "student_structure": "aux_feedback" if model.aux_feedback else "legacy",
+        "policy_mlp_input": HIDDEN + AUX_IN_DIM if model.aux_feedback else HIDDEN,
         "aux_heads": {
             "source": "h_out (LSTM output)",
             "splint_length": {"dim": 1, "units": "m"},
             "base_lin_vel": {"dim": 3, "units": "m/s"},
+            **({"peg_leg": {"dim": PEG_CLASSES, "classes": ["FL", "FR", "RL", "RR", "healthy"]}}
+               if model.aux_feedback else {}),
+            "fed_back_into_policy": bool(model.aux_feedback),
         },
         "npz_keys": sorted(bundle.keys()),
         "notes": [
@@ -335,6 +419,9 @@ def main():
             "Policy output is raw action (teacher units); mse_norm is a training loss "
             "scale only. target_q = default_q + 0.25 * action.",
             "Reset the LSTM hidden/cell at every episode start (stand-up handover).",
+            "aux_feedback structure: the policy MLP input is [h | peg one-hot(argmax of "
+            "peg_head) | L_hat * sum(obs[45:49]) | v_hat]; this is inside the .pt/.onnx "
+            "graph, and sdk_deploy/policy.py rebuilds it for the .npz (arch lstm_aux_mlp).",
         ],
         "exported_utc": datetime.datetime.utcnow().isoformat() + "Z",
     }
